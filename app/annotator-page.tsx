@@ -1,28 +1,30 @@
-'use client'
+"use client";
 
-import { useSearchParams } from 'next/navigation'
-import { useState } from 'react'
-import { RegionSelector } from '@/components/region-selector'
-import OcrRegionSelector from '@/components/OcrRegionSelector'
-import SubtitlePreview from '@/components/SubtitlePreview'
-import type { Region } from '@/lib/api'
+import { useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { RegionSelector } from "@/components/region-selector";
+import OcrRegionSelector from "@/components/OcrRegionSelector";
+import SubtitlePreview from "@/components/SubtitlePreview";
+import type { Region } from "@/lib/api";
 
-type Tab = 'watermark' | 'ocr' | 'subtitle'
+type Tab = "watermark" | "ocr" | "subtitle";
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'watermark', label: 'Xoá watermark', icon: '◻' },
-  { id: 'ocr', label: 'Vùng quét sub', icon: '⊡' },
-  { id: 'subtitle', label: 'Kích thước sub', icon: '≡' },
-]
+const TABS: { id: Tab; label: string }[] = [
+  { id: "watermark", label: "Xoá watermark" },
+  { id: "ocr", label: "Vùng quét sub" },
+  { id: "subtitle", label: "Kích thước sub" },
+];
 
 export function AnnotatorPage() {
-  const params = useSearchParams()
-  const imageUrl = params.get('url') ?? ''
-  const videoId = params.get('videoid') ?? ''
-  const baseUrl = imageUrl ? new URL(imageUrl).origin : ''
+  const params = useSearchParams();
+  const imageUrl = params.get("url") ?? "";
+  const videoId = params.get("videoid") ?? "";
+  const baseUrl = imageUrl ? new URL(imageUrl).origin : "";
 
-  const [tab, setTab] = useState<Tab>((params.get('mode') as Tab) || 'watermark')
-  const [ocrRegion, setOcrRegion] = useState<Region | null>(null)
+  const [tab, setTab] = useState<Tab>(
+    (params.get("mode") as Tab) || "watermark",
+  );
+  const [ocrRegion, setOcrRegion] = useState<Region | null>(null);
 
   return (
     <main className="min-h-[100dvh] bg-[#f8f8f6] text-[#1a1a18]">
@@ -34,8 +36,12 @@ export function AnnotatorPage() {
               RX
             </div>
             <div className="hidden sm:block">
-              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[#9a9a95]">Region annotator</p>
-              <h1 className="text-sm font-semibold tracking-tight leading-tight">Đánh dấu vùng</h1>
+              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[#9a9a95]">
+                Region annotator
+              </p>
+              <h1 className="text-sm font-semibold tracking-tight leading-tight">
+                Đánh dấu vùng
+              </h1>
             </div>
           </div>
           <div className="flex items-center gap-2 rounded-full bg-[#f0efed] px-3 py-1.5 font-mono text-[10px] text-[#6b6b66]">
@@ -52,11 +58,13 @@ export function AnnotatorPage() {
             01 / Annotate
           </span>
           <h2 className="mt-4 text-balance text-4xl font-semibold tracking-[-0.02em] sm:text-5xl leading-[1.1]">
-            Khoanh chính xác<br />
+            Khoanh chính xác
+            <br />
             <span className="text-[#6b6b66]">những vùng cần lưu.</span>
           </h2>
           <p className="mt-5 text-lg leading-7 text-[#6b6b66] max-w-xl">
-            Kéo trực tiếp trên ảnh/video để tạo vùng. Tọa độ tỷ lệ (0–1), gửi kèm video ID.
+            Kéo trực tiếp trên ảnh/video để tạo vùng. Tọa độ tỷ lệ (0–1), gửi
+            kèm video ID.
           </p>
         </div>
 
@@ -68,11 +76,10 @@ export function AnnotatorPage() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
                 tab === t.id
-                  ? 'bg-[#3563e9] text-white shadow-[0_2px_8px_rgba(53,99,233,0.25)]'
-                  : 'text-[#6b6b66] hover:text-[#3563e9] hover:bg-[#3563e9]/5'
+                  ? "bg-[#3563e9] text-white shadow-[0_2px_8px_rgba(53,99,233,0.25)]"
+                  : "text-[#6b6b66] hover:text-[#3563e9] hover:bg-[#3563e9]/5"
               }`}
             >
-              <span className="text-xs opacity-60">{t.icon}</span>
               {t.label}
             </button>
           ))}
@@ -86,27 +93,27 @@ export function AnnotatorPage() {
             </div>
             <p className="text-lg font-semibold">Chưa có ảnh để đánh dấu</p>
             <p className="mt-2 text-sm text-[#9a9a95]">
-              Mở app với{' '}
+              Mở app với{" "}
               <code className="rounded-lg bg-[#f0efed] px-2 py-1 font-mono text-xs text-[#6b6b66]">
                 ?url=...&videoid=...&mode=watermark
               </code>
             </p>
           </div>
-        ) : tab === 'watermark' ? (
+        ) : tab === "watermark" ? (
           <RegionSelector imageUrl={imageUrl} videoId={videoId} />
-        ) : tab === 'ocr' ? (
+        ) : tab === "ocr" ? (
           <OcrRegionSelector
             videoId={videoId}
             baseUrl={baseUrl}
             onConfirmed={(region, startTime) => {
-              setOcrRegion(region)
+              setOcrRegion(region);
               fetch(`${baseUrl}/api/region/${videoId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ region, start_time: startTime }),
               }).then((r) => {
-                if (r.ok) alert('Đã lưu vùng quét sub!')
-              })
+                if (r.ok) alert("Đã lưu vùng quét sub!");
+              });
             }}
           />
         ) : (
@@ -116,16 +123,16 @@ export function AnnotatorPage() {
             region={ocrRegion || { x1: 0, y1: 0, x2: 1, y2: 1 }}
             onConfirmed={(style) => {
               fetch(`${baseUrl}/api/style/${videoId}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(style),
               }).then((r) => {
-                if (r.ok) alert('Đã lưu kích thước & vị trí sub!')
-              })
+                if (r.ok) alert("Đã lưu kích thước & vị trí sub!");
+              });
             }}
           />
         )}
       </div>
     </main>
-  )
+  );
 }

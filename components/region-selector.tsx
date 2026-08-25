@@ -46,26 +46,14 @@ function denorm(r: Region, w: number, h: number) {
 type DragState =
   | { type: "idle" }
   | { type: "draw"; startX: number; startY: number }
-  | {
-      type: "move";
-      startX: number;
-      startY: number;
-      rect: Region;
-      index: number;
-    }
-  | {
-      type: "resize";
-      handle: HandleId;
-      startX: number;
-      startY: number;
-      rect: Region;
-      index: number;
-    };
+  | { type: "move"; startX: number; startY: number; rect: Region; index: number }
+  | { type: "resize"; handle: HandleId; startX: number; startY: number; rect: Region; index: number };
 
 export function RegionSelector({ imageUrl, videoId }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const dragRef = useRef<DragState>({ type: "idle" });
   const rafRef = useRef<number>(0);
   const regionsRef = useRef<Region[]>([]);
@@ -76,18 +64,13 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
 
   const [isSaving, setIsSaving] = useState(false);
-  const [message, setMessage] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [mediaLoaded, setMediaLoaded] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
 
-  useEffect(() => {
-    regionsRef.current = regions;
-  }, [regions]);
+  useEffect(() => { regionsRef.current = regions; }, [regions]);
 
   const redraw = useCallback(() => {
     const c = canvasRef.current;
@@ -103,14 +86,10 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       const p = denorm(r, c.width, c.height);
       const isActive = i === activeIndex;
 
-      ctx.fillStyle = isActive
-        ? "rgba(53,99,233,0.12)"
-        : "rgba(53,99,233,0.08)";
+      ctx.fillStyle = isActive ? "rgba(53,99,233,0.12)" : "rgba(53,99,233,0.08)";
       ctx.fillRect(p.x1, p.y1, p.x2 - p.x1, p.y2 - p.y1);
 
-      ctx.strokeStyle = isActive
-        ? "rgba(53,99,233,0.85)"
-        : "rgba(53,99,233,0.55)";
+      ctx.strokeStyle = isActive ? "rgba(53,99,233,0.85)" : "rgba(53,99,233,0.55)";
       ctx.lineWidth = isActive ? 2 : 1.5;
       ctx.setLineDash([]);
       ctx.strokeRect(p.x1, p.y1, p.x2 - p.x1, p.y2 - p.y1);
@@ -119,62 +98,29 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       ctx.strokeStyle = isActive ? "rgba(53,99,233,1)" : "rgba(53,99,233,0.6)";
       ctx.lineWidth = 2.5;
       for (const [cx, cy, dx, dy] of [
-        [p.x1, p.y1, 1, 1],
-        [p.x2, p.y1, -1, 1],
-        [p.x1, p.y2, 1, -1],
-        [p.x2, p.y2, -1, -1],
+        [p.x1, p.y1, 1, 1], [p.x2, p.y1, -1, 1],
+        [p.x1, p.y2, 1, -1], [p.x2, p.y2, -1, -1],
       ] as [number, number, number, number][]) {
-        ctx.beginPath();
-        ctx.moveTo(cx, cy + dy * corner);
-        ctx.lineTo(cx, cy);
-        ctx.lineTo(cx + dx * corner, cy);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx, cy + dy * corner); ctx.lineTo(cx, cy); ctx.lineTo(cx + dx * corner, cy); ctx.stroke();
       }
 
       if (isActive) {
         for (const id of ALL_HANDLES) {
           let hx: number, hy: number;
           switch (id) {
-            case "nw":
-              hx = p.x1;
-              hy = p.y1;
-              break;
-            case "ne":
-              hx = p.x2;
-              hy = p.y1;
-              break;
-            case "sw":
-              hx = p.x1;
-              hy = p.y2;
-              break;
-            case "se":
-              hx = p.x2;
-              hy = p.y2;
-              break;
-            case "n":
-              hx = (p.x1 + p.x2) / 2;
-              hy = p.y1;
-              break;
-            case "s":
-              hx = (p.x1 + p.x2) / 2;
-              hy = p.y2;
-              break;
-            case "w":
-              hx = p.x1;
-              hy = (p.y1 + p.y2) / 2;
-              break;
-            case "e":
-              hx = p.x2;
-              hy = (p.y1 + p.y2) / 2;
-              break;
+            case "nw": hx = p.x1; hy = p.y1; break;
+            case "ne": hx = p.x2; hy = p.y1; break;
+            case "sw": hx = p.x1; hy = p.y2; break;
+            case "se": hx = p.x2; hy = p.y2; break;
+            case "n": hx = (p.x1 + p.x2) / 2; hy = p.y1; break;
+            case "s": hx = (p.x1 + p.x2) / 2; hy = p.y2; break;
+            case "w": hx = p.x1; hy = (p.y1 + p.y2) / 2; break;
+            case "e": hx = p.x2; hy = (p.y1 + p.y2) / 2; break;
           }
           ctx.fillStyle = "#ffffff";
           ctx.strokeStyle = "rgba(53,99,233,0.8)";
           ctx.lineWidth = 1.5;
-          ctx.beginPath();
-          ctx.arc(hx, hy, HANDLE_RADIUS, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
+          ctx.beginPath(); ctx.arc(hx, hy, HANDLE_RADIUS, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
         }
       }
 
@@ -182,55 +128,31 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       ctx.font = "600 10px monospace";
       const tw = ctx.measureText(label).width;
       ctx.fillStyle = isActive ? "#3563e9" : "rgba(53,99,233,0.7)";
-      const lx = p.x1;
-      const ly = p.y1 - 20;
-      const lh = 16;
-      const lw = tw + 8;
+      const lx = p.x1, ly = p.y1 - 20, lh = 16, lw = tw + 8;
       ctx.beginPath();
-      ctx.moveTo(lx + 4, ly);
-      ctx.lineTo(lx + lw - 4, ly);
-      ctx.quadraticCurveTo(lx + lw, ly, lx + lw, ly + 4);
-      ctx.lineTo(lx + lw, ly + lh - 4);
-      ctx.quadraticCurveTo(lx + lw, ly + lh, lx + lw - 4, ly + lh);
-      ctx.lineTo(lx + 4, ly + lh);
-      ctx.quadraticCurveTo(lx, ly + lh, lx, ly + lh - 4);
-      ctx.lineTo(lx, ly + 4);
-      ctx.quadraticCurveTo(lx, ly, lx + 4, ly);
-      ctx.fill();
-      ctx.fillStyle = "#ffffff";
-      ctx.fillText(label, lx + 4, ly + 11);
+      ctx.moveTo(lx + 4, ly); ctx.lineTo(lx + lw - 4, ly); ctx.quadraticCurveTo(lx + lw, ly, lx + lw, ly + 4);
+      ctx.lineTo(lx + lw, ly + lh - 4); ctx.quadraticCurveTo(lx + lw, ly + lh, lx + lw - 4, ly + lh);
+      ctx.lineTo(lx + 4, ly + lh); ctx.quadraticCurveTo(lx, ly + lh, lx, ly + lh - 4);
+      ctx.lineTo(lx, ly + 4); ctx.quadraticCurveTo(lx, ly, lx + 4, ly); ctx.fill();
+      ctx.fillStyle = "#ffffff"; ctx.fillText(label, lx + 4, ly + 11);
     });
   }, [activeIndex]);
 
   const scheduleRedraw = useCallback(() => {
     if (!rafRef.current) {
-      rafRef.current = requestAnimationFrame(() => {
-        rafRef.current = 0;
-        redraw();
-      });
+      rafRef.current = requestAnimationFrame(() => { rafRef.current = 0; redraw(); });
     }
   }, [redraw]);
 
-  useEffect(() => {
-    if (size.w > 0 && size.h > 0) scheduleRedraw();
-  }, [size, scheduleRedraw]);
-
-  useEffect(() => {
-    if (activeIndex !== null) scheduleRedraw();
-  }, [activeIndex, scheduleRedraw]);
+  useEffect(() => { if (size.w > 0 && size.h > 0) scheduleRedraw(); }, [size, scheduleRedraw]);
+  useEffect(() => { if (activeIndex !== null) scheduleRedraw(); }, [activeIndex, scheduleRedraw]);
 
   const getPos = (cx: number, cy: number) => {
     const b = canvasRef.current?.getBoundingClientRect();
     return b ? { x: cx - b.left, y: cy - b.top } : { x: 0, y: 0 };
   };
 
-  const hitTest = (
-    px: number,
-    py: number,
-  ):
-    | { type: "handle"; handle: HandleId; index: number }
-    | { type: "rect"; index: number }
-    | null => {
+  const hitTest = (px: number, py: number): { type: "handle"; handle: HandleId; index: number } | { type: "rect"; index: number } | null => {
     const c = canvasRef.current;
     if (!c) return null;
     const allRegions = regionsRef.current;
@@ -241,50 +163,22 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       for (const id of ALL_HANDLES) {
         let hx: number, hy: number;
         switch (id) {
-          case "nw":
-            hx = p.x1;
-            hy = p.y1;
-            break;
-          case "ne":
-            hx = p.x2;
-            hy = p.y1;
-            break;
-          case "sw":
-            hx = p.x1;
-            hy = p.y2;
-            break;
-          case "se":
-            hx = p.x2;
-            hy = p.y2;
-            break;
-          case "n":
-            hx = (p.x1 + p.x2) / 2;
-            hy = p.y1;
-            break;
-          case "s":
-            hx = (p.x1 + p.x2) / 2;
-            hy = p.y2;
-            break;
-          case "w":
-            hx = p.x1;
-            hy = (p.y1 + p.y2) / 2;
-            break;
-          case "e":
-            hx = p.x2;
-            hy = (p.y1 + p.y2) / 2;
-            break;
+          case "nw": hx = p.x1; hy = p.y1; break;
+          case "ne": hx = p.x2; hy = p.y1; break;
+          case "sw": hx = p.x1; hy = p.y2; break;
+          case "se": hx = p.x2; hy = p.y2; break;
+          case "n": hx = (p.x1 + p.x2) / 2; hy = p.y1; break;
+          case "s": hx = (p.x1 + p.x2) / 2; hy = p.y2; break;
+          case "w": hx = p.x1; hy = (p.y1 + p.y2) / 2; break;
+          case "e": hx = p.x2; hy = (p.y1 + p.y2) / 2; break;
         }
-        if (Math.abs(px - hx) <= hs && Math.abs(py - hy) <= hs)
-          return { type: "handle", handle: id, index: i };
+        if (Math.abs(px - hx) <= hs && Math.abs(py - hy) <= hs) return { type: "handle", handle: id, index: i };
       }
     }
-
     for (let i = allRegions.length - 1; i >= 0; i--) {
       const p = denorm(allRegions[i], c.width, c.height);
-      if (px >= p.x1 && px <= p.x2 && py >= p.y1 && py <= p.y2)
-        return { type: "rect", index: i };
+      if (px >= p.x1 && px <= p.x2 && py >= p.y1 && py <= p.y2) return { type: "rect", index: i };
     }
-
     return null;
   };
 
@@ -295,28 +189,14 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
     setMessage(null);
 
     const hit = hitTest(pos.x, pos.y);
-
     if (hit && hit.type === "handle") {
       setActiveIndex(hit.index);
-      dragRef.current = {
-        type: "resize",
-        handle: hit.handle,
-        startX: pos.x,
-        startY: pos.y,
-        rect: { ...regionsRef.current[hit.index] },
-        index: hit.index,
-      };
+      dragRef.current = { type: "resize", handle: hit.handle, startX: pos.x, startY: pos.y, rect: { ...regionsRef.current[hit.index] }, index: hit.index };
       return;
     }
     if (hit && hit.type === "rect") {
       setActiveIndex(hit.index);
-      dragRef.current = {
-        type: "move",
-        startX: pos.x,
-        startY: pos.y,
-        rect: { ...regionsRef.current[hit.index] },
-        index: hit.index,
-      };
+      dragRef.current = { type: "move", startX: pos.x, startY: pos.y, rect: { ...regionsRef.current[hit.index] }, index: hit.index };
       return;
     }
 
@@ -338,8 +218,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
     if (d.type === "idle") {
       if (c) {
         const hit = hitTest(pos.x, pos.y);
-        if (hit && hit.type === "handle")
-          c.style.cursor = HANDLE_CURSOR[hit.handle];
+        if (hit && hit.type === "handle") c.style.cursor = HANDLE_CURSOR[hit.handle];
         else if (hit && hit.type === "rect") c.style.cursor = "move";
         else c.style.cursor = "crosshair";
       }
@@ -351,69 +230,39 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       const s = { x: d.startX / size.w, y: d.startY / size.h };
       const all = [...regionsRef.current];
       all[all.length - 1] = {
-        x1: clamp(Math.min(s.x, n.x)),
-        y1: clamp(Math.min(s.y, n.y)),
-        x2: clamp(Math.max(s.x, n.x)),
-        y2: clamp(Math.max(s.y, n.y)),
+        x1: clamp(Math.min(s.x, n.x)), y1: clamp(Math.min(s.y, n.y)),
+        x2: clamp(Math.max(s.x, n.x)), y2: clamp(Math.max(s.y, n.y)),
       };
-      regionsRef.current = all;
-      setRegions(all);
-      scheduleRedraw();
+      regionsRef.current = all; setRegions(all); scheduleRedraw();
       return;
     }
 
     if (!c) return;
-    const dx = (pos.x - d.startX) / c.width;
-    const dy = (pos.y - d.startY) / c.height;
+    const dx = (pos.x - d.startX) / c.width, dy = (pos.y - d.startY) / c.height;
     const sr = d.rect;
     const all = [...regionsRef.current];
 
     if (d.type === "move") {
-      const x1 = clamp(sr.x1 + dx),
-        y1 = clamp(sr.y1 + dy);
-      const x2 = clamp(sr.x2 + dx),
-        y2 = clamp(sr.y2 + dy);
+      const x1 = clamp(sr.x1 + dx), y1 = clamp(sr.y1 + dy);
+      const x2 = clamp(sr.x2 + dx), y2 = clamp(sr.y2 + dy);
       if (x2 - x1 < 0.01 || y2 - y1 < 0.01) return;
       all[d.index] = { x1, y1, x2, y2 };
     } else if (d.type === "resize") {
       let { x1, y1, x2, y2 } = sr;
       switch (d.handle) {
-        case "nw":
-          x1 = clamp(sr.x1 + dx);
-          y1 = clamp(sr.y1 + dy);
-          break;
-        case "ne":
-          x2 = clamp(sr.x2 + dx);
-          y1 = clamp(sr.y1 + dy);
-          break;
-        case "sw":
-          x1 = clamp(sr.x1 + dx);
-          y2 = clamp(sr.y2 + dy);
-          break;
-        case "se":
-          x2 = clamp(sr.x2 + dx);
-          y2 = clamp(sr.y2 + dy);
-          break;
-        case "n":
-          y1 = clamp(sr.y1 + dy);
-          break;
-        case "s":
-          y2 = clamp(sr.y2 + dy);
-          break;
-        case "w":
-          x1 = clamp(sr.x1 + dx);
-          break;
-        case "e":
-          x2 = clamp(sr.x2 + dx);
-          break;
+        case "nw": x1 = clamp(sr.x1 + dx); y1 = clamp(sr.y1 + dy); break;
+        case "ne": x2 = clamp(sr.x2 + dx); y1 = clamp(sr.y1 + dy); break;
+        case "sw": x1 = clamp(sr.x1 + dx); y2 = clamp(sr.y2 + dy); break;
+        case "se": x2 = clamp(sr.x2 + dx); y2 = clamp(sr.y2 + dy); break;
+        case "n": y1 = clamp(sr.y1 + dy); break;
+        case "s": y2 = clamp(sr.y2 + dy); break;
+        case "w": x1 = clamp(sr.x1 + dx); break;
+        case "e": x2 = clamp(sr.x2 + dx); break;
       }
       if (x2 - x1 < 0.01 || y2 - y1 < 0.01) return;
       all[d.index] = { x1, y1, x2, y2 };
     }
-
-    regionsRef.current = all;
-    setRegions(all);
-    scheduleRedraw();
+    regionsRef.current = all; setRegions(all); scheduleRedraw();
   };
 
   const onPointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -422,10 +271,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       const all = [...regionsRef.current];
       const last = all[all.length - 1];
       if (last && (last.x2 - last.x1 < 0.01 || last.y2 - last.y1 < 0.01)) {
-        all.pop();
-        regionsRef.current = all;
-        setRegions(all);
-        setActiveIndex(null);
+        all.pop(); regionsRef.current = all; setRegions(all); setActiveIndex(null);
       }
     }
     dragRef.current = { type: "idle" };
@@ -433,327 +279,245 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
 
   const removeRegion = (index: number) => {
     const all = regionsRef.current.filter((_, i) => i !== index);
-    regionsRef.current = all;
-    setRegions(all);
-    setActiveIndex(null);
+    regionsRef.current = all; setRegions(all); setActiveIndex(null);
   };
 
   const clearAll = () => {
-    regionsRef.current = [];
-    setRegions([]);
-    setActiveIndex(null);
-    setMessage(null);
+    regionsRef.current = []; setRegions([]); setActiveIndex(null); setMessage(null);
   };
 
   const saveRegions = async () => {
-    if (!videoId) {
-      setMessage({ type: "error", text: "Thiếu videoid trên URL." });
-      return;
-    }
+    if (!videoId) { setMessage({ type: "error", text: "Thiếu videoid trên URL." }); return; }
     let endpoint: string;
-    try {
-      endpoint = `${new URL(imageUrl).origin}/api/delogo/${encodeURIComponent(videoId)}`;
-    } catch {
-      setMessage({ type: "error", text: "URL ảnh hoặc video không hợp lệ." });
-      return;
-    }
-    setIsSaving(true);
-    setMessage(null);
+    try { endpoint = `${new URL(imageUrl).origin}/api/delogo/${encodeURIComponent(videoId)}`; }
+    catch { setMessage({ type: "error", text: "URL ảnh hoặc video không hợp lệ." }); return; }
+    setIsSaving(true); setMessage(null);
     try {
       const response = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ videoid: videoId, regions }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       setMessage({ type: "success", text: `Đã lưu ${regions.length} vùng.` });
     } catch (error) {
-      setMessage({
-        type: "error",
-        text:
-          error instanceof Error
-            ? `Không thể lưu: ${error.message}`
-            : "Không thể kết nối API.",
-      });
-    } finally {
-      setIsSaving(false);
-    }
+      setMessage({ type: "error", text: error instanceof Error ? `Không thể lưu: ${error.message}` : "Không thể kết nối API." });
+    } finally { setIsSaving(false); }
   };
 
+  const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="double-bezel overflow-hidden">
-        <div className="double-bezel-inner">
-          <div className="flex items-center justify-between border-b border-black/[0.04] px-5 py-4">
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-ink-light">
-                Canvas
-              </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-tight">
-                Kéo để khoanh vùng
-              </h2>
-            </div>
-            <span className="rounded-full bg-accent/8 px-3 py-1 font-mono text-xs text-accent">
-              {regions.length} vùng
-            </span>
-          </div>
+    <div className="space-y-5">
+      {/* Instructions bar */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-4">
+        <p className="text-sm text-ink-muted leading-relaxed">
+          Kéo trên ảnh/video để tạo vùng xoá watermark. Tọa độ tỷ lệ (0–1).
+        </p>
+        <div className="flex gap-2 flex-shrink-0 items-center">
+          <kbd className="px-2 py-0.5 rounded text-[10px] font-mono text-ink-muted bg-black/[0.03] ring-1 ring-black/[0.06]">drag</kbd>
+          <span className="text-[10px] text-ink-light hidden sm:inline">tạo / di chuyển</span>
+          <kbd className="px-2 py-0.5 rounded text-[10px] font-mono text-ink-muted bg-black/[0.03] ring-1 ring-black/[0.06]">handle</kbd>
+          <span className="text-[10px] text-ink-light hidden sm:inline">resize</span>
+        </div>
+      </div>
 
-          <div className="bg-[#f0efed]/40 p-4 sm:p-6">
-            <div
-              ref={containerRef}
-              className="relative mx-auto w-fit max-w-full overflow-hidden rounded-xl"
-            >
-              {isVideo ? (
-                <video
-                  ref={videoRef}
-                  src={imageUrl}
-                  className="block max-h-[68vh] max-w-full object-contain"
-                  preload="metadata"
-                  playsInline
-                  onLoadedMetadata={(event) => {
-                    setMediaLoaded(true);
-                    setDuration(event.currentTarget.duration);
-                    setSize({
-                      w: event.currentTarget.videoWidth,
-                      h: event.currentTarget.videoHeight,
-                    });
-                  }}
-                  onTimeUpdate={(event) =>
-                    setCurrentTime(event.currentTarget.currentTime)
-                  }
-                  onPlay={() => setIsPlaying(true)}
-                  onPause={() => setIsPlaying(false)}
-                  onError={() => setMediaLoaded(false)}
-                />
-              ) : (
-                <img
-                  src={imageUrl}
-                  alt="Ảnh cần đánh dấu vùng tọa độ"
-                  className="block max-h-[68vh] max-w-full object-contain"
-                  onLoad={(e) => {
-                    setMediaLoaded(true);
-                    const el = e.currentTarget;
-                    setSize({ w: el.naturalWidth, h: el.naturalHeight });
-                  }}
-                  onError={() => setMediaLoaded(false)}
-                />
-              )}
+      {/* Video / Image — same frame as OCR tab */}
+      <div className="double-bezel">
+        <div className="double-bezel-inner overflow-hidden">
+          <div
+            ref={containerRef}
+            className="relative bg-black select-none mx-auto touch-none"
+            style={{ width: size.w, height: size.h, maxWidth: "100%" }}
+          >
+            {isVideo ? (
+              <video
+                ref={videoRef}
+                src={imageUrl}
+                className="absolute inset-0 w-full h-full object-contain"
+                preload="metadata"
+                playsInline
+                controls={false}
+                onLoadedMetadata={(event) => {
+                  const v = event.currentTarget;
+                  setMediaLoaded(true);
+                  setDuration(v.duration);
+                  const cw = containerRef.current?.clientWidth || 800;
+                  const r = v.videoWidth / v.videoHeight || 16 / 9;
+                  setSize({ w: Math.min(cw, v.videoWidth), h: Math.min(cw, v.videoWidth) / r });
+                }}
+                onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => { setIsPlaying(false); setCurrentTime(videoRef.current?.currentTime ?? 0); }}
+                onError={() => setMediaLoaded(false)}
+              />
+            ) : (
+              <img
+                src={imageUrl}
+                alt="Ảnh cần xoá watermark"
+                className="absolute inset-0 w-full h-full object-contain"
+                onLoad={(e) => {
+                  setMediaLoaded(true);
+                  const el = e.currentTarget;
+                  const cw = containerRef.current?.clientWidth || 800;
+                  const r = el.naturalWidth / el.naturalHeight;
+                  setSize({ w: Math.min(cw, el.naturalWidth), h: Math.min(cw, el.naturalWidth) / r });
+                }}
+                onError={() => setMediaLoaded(false)}
+              />
+            )}
 
-              {!mediaLoaded && (
-                <div className="flex min-h-64 w-[min(80vw,720px)] items-center justify-center p-8 text-center text-sm text-ink-light">
-                  Không thể tải {isVideo ? "video" : "ảnh"} từ URL này.
-                </div>
-              )}
-
-              {mediaLoaded && (
-                <canvas
-                  ref={canvasRef}
-                  width={size.w}
-                  height={size.h}
-                  className="absolute inset-0 touch-none cursor-crosshair"
-                  onPointerDown={onPointerDown}
-                  onPointerMove={onPointerMove}
-                  onPointerUp={onPointerUp}
-                  onPointerLeave={onPointerUp}
-                />
-              )}
-            </div>
-          </div>
-
-          {isVideo && (
-            <>
-              <div className="glass-panel mx-4 sm:mx-6 mt-4 mb-2 px-3 py-2.5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    aria-label={isPlaying ? "Tạm dừng video" : "Phát video"}
-                    onClick={() => {
-                      const video = videoRef.current;
-                      if (!video) return;
-                      if (video.paused) void video.play();
-                      else video.pause();
-                    }}
-                    className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center
-                               hover:bg-accent shadow-sm active:scale-[0.95] transition-all duration-300
-                               ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
-                  >
-                    {isPlaying ? (
-                      <svg
-                        className="w-4 h-4"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <rect x="6" y="4" width="4" height="16" rx="1" />
-                        <rect x="14" y="4" width="4" height="16" rx="1" />
-                      </svg>
-                    ) : (
-                      <svg
-                        className="w-4 h-4 ml-0.5"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M8 5v14l11-7z" />
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                <span className="text-[11px] font-mono text-ink-light tabular-nums tracking-tight">
-                  {formatTime(currentTime)}{" "}
-                  <span className="opacity-40">/</span> {formatTime(duration)}
-                </span>
+            {!mediaLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/40">
+                Không thể tải {isVideo ? "video" : "ảnh"} từ URL này.
               </div>
-              <div className="mx-4 sm:mx-6 mb-4">
-                <input
-                  aria-label="Timeline video"
-                  type="range"
-                  min="0"
-                  max={duration || 0}
-                  step="0.01"
-                  value={Math.min(currentTime, duration || 0)}
-                  onChange={(event) => {
-                    const time = Number(event.target.value);
-                    setCurrentTime(time);
-                    if (videoRef.current) videoRef.current.currentTime = time;
-                  }}
-                  disabled={!duration}
-                  className="h-1.5 w-full cursor-pointer accent-accent disabled:cursor-not-allowed"
-                />
-              </div>
-            </>
-          )}
+            )}
 
-          <div className="flex items-center gap-2 border-t border-black/[0.04] px-5 py-3 text-xs text-ink-light">
-            <svg
-              className="size-4 shrink-0"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 9l4-4 4 4" />
-              <path d="M9 5v14" />
-            </svg>
-            <span>
-              Kéo để tạo vùng, giữ `{`拽`}`Inside di chuyển, kéo mép thay đổi
-              kích thước. Tọa độ 0–1.
-            </span>
+            {mediaLoaded && (
+              <canvas
+                ref={canvasRef}
+                width={size.w}
+                height={size.h}
+                className="absolute inset-0 touch-none"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerLeave={onPointerUp}
+              />
+            )}
           </div>
         </div>
-      </section>
+      </div>
 
-      <aside className="flex flex-col gap-4">
-        <div className="glass-panel p-5">
-          <div className="flex items-center gap-2 text-sm font-semibold">
-            <Crosshair className="size-4 text-accent" /> Thông tin phiên
-          </div>
-          <div className="mt-4 grid gap-3 text-sm">
-            <div>
-              <p className="text-[11px] text-ink-light">Video ID</p>
-              <p className="mt-1 truncate font-mono text-xs">
-                {videoId || "Chưa có"}
-              </p>
-            </div>
-            <div>
-              <p className="text-[11px] text-ink-light">Ảnh nguồn</p>
-              <p className="mt-1 truncate font-mono text-[10px] wrap-break-word">
-                {imageUrl || "Chưa có"}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="glass-panel p-5">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold">Danh sách vùng</h3>
+      {/* Timeline — same glass-panel as OCR */}
+      {isVideo && (
+        <div className="glass-panel rounded-2xl px-3 py-2.5 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
             <button
-              type="button"
-              onClick={clearAll}
-              disabled={!regions.length}
-              className="inline-flex items-center gap-1.5 text-[11px] text-ink-light transition hover:text-danger disabled:opacity-40 cursor-pointer"
+              onClick={() => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause(); }}
+              aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+              className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center
+                         hover:bg-accent shadow-sm active:scale-[0.95] transition-all duration-300
+                         ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
             >
-              <Trash2 className="size-3" /> Xóa hết
+              {isPlaying ? (
+                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+              ) : (
+                <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+              )}
             </button>
           </div>
-          <div className="mt-3 flex flex-col gap-1.5">
-            {regions.length === 0 ? (
-              <p className="rounded-xl bg-black/[0.02] px-3 py-4 text-center text-xs text-ink-light">
-                Chưa có vùng nào
-              </p>
-            ) : (
-              regions.map((r, i) => (
+          <span className="text-[11px] font-mono text-ink-light tabular-nums tracking-tight">
+            {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
+          </span>
+        </div>
+      )}
+      {isVideo && (
+        <div
+          ref={timelineRef}
+          className="relative h-8 flex items-center cursor-pointer group select-none -mt-3"
+          onMouseDown={(e) => {
+            const v = videoRef.current, bar = timelineRef.current;
+            if (!v || !bar || !duration) return;
+            const rect = bar.getBoundingClientRect();
+            v.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
+          }}
+          onMouseMove={(e) => { if (e.buttons !== 1) return; onMouseDown; }}
+        >
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/[0.06] overflow-hidden">
+            <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-150" style={{ width: `${pct}%` }} />
+          </div>
+          <div
+            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-accent shadow-sm transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none"
+            style={{ left: `calc(${pct}% - 7px)` }}
+          />
+          <div className="absolute -bottom-5 inset-x-0 flex justify-between text-[10px] font-mono text-ink-light pointer-events-none">
+            <span>{formatTime(currentTime)}</span>
+            <span>{formatTime(duration)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Sidebar */}
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div />
+
+        <aside className="flex flex-col gap-4">
+          <div className="glass-panel p-5">
+            <div className="flex items-center gap-2 text-sm font-semibold">
+              <Crosshair className="size-4 text-accent" /> Thông tin phiên
+            </div>
+            <div className="mt-4 grid gap-3 text-sm">
+              <div>
+                <p className="text-[11px] text-ink-light">Video ID</p>
+                <p className="mt-1 truncate font-mono text-xs">{videoId || "Chưa có"}</p>
+              </div>
+              <div>
+                <p className="text-[11px] text-ink-light">Nguồn</p>
+                <p className="mt-1 truncate font-mono text-[10px]">{imageUrl || "Chưa có"}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="glass-panel p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold">Danh sách vùng</h3>
+              <button
+                type="button" onClick={clearAll} disabled={!regions.length}
+                className="inline-flex items-center gap-1.5 text-[11px] text-ink-light transition hover:text-danger disabled:opacity-40 cursor-pointer"
+              >
+                <Trash2 className="size-3" /> Xóa hết
+              </button>
+            </div>
+            <div className="mt-3 flex flex-col gap-1.5">
+              {regions.length === 0 ? (
+                <p className="rounded-xl bg-black/[0.02] px-3 py-4 text-center text-xs text-ink-light">Chưa có vùng nào</p>
+              ) : regions.map((r, i) => (
                 <div
-                  key={i}
-                  onClick={() => setActiveIndex(i)}
+                  key={i} onClick={() => setActiveIndex(i)}
                   className={`flex items-center gap-2 rounded-lg px-3 py-2 font-mono text-[11px] cursor-pointer transition-all duration-200 ${
-                    activeIndex === i
-                      ? "bg-accent/8 ring-1 ring-accent/20"
-                      : "bg-black/[0.02] hover:bg-black/[0.04]"
+                    activeIndex === i ? "bg-accent/8 ring-1 ring-accent/20" : "bg-black/[0.02] hover:bg-black/[0.04]"
                   }`}
                 >
                   <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                    <span
-                      className={
-                        activeIndex === i ? "text-accent font-semibold" : ""
-                      }
-                    >
-                      #{i + 1}
-                    </span>
+                    <span className={activeIndex === i ? "text-accent font-semibold" : ""}>#{i + 1}</span>
                     <span className="truncate text-ink-light">
-                      x:{(r.x1 * 100).toFixed(1)}%–{(r.x2 * 100).toFixed(1)}%
-                      &nbsp;y:{(r.y1 * 100).toFixed(1)}%–
-                      {(r.y2 * 100).toFixed(1)}%
+                      x:{(r.x1 * 100).toFixed(1)}%–{(r.x2 * 100).toFixed(1)}%&nbsp;y:{(r.y1 * 100).toFixed(1)}%–{(r.y2 * 100).toFixed(1)}%
                     </span>
                   </div>
                   <button
-                    type="button"
-                    aria-label={`Xóa vùng ${i + 1}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeRegion(i);
-                    }}
+                    type="button" aria-label={`Xóa vùng ${i + 1}`}
+                    onClick={(e) => { e.stopPropagation(); removeRegion(i); }}
                     className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-light transition hover:bg-danger/10 hover:text-danger cursor-pointer"
                   >
                     <Trash2 className="size-3" />
                   </button>
                 </div>
-              ))
-            )}
+              ))}
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          onClick={saveRegions}
-          disabled={isSaving || !regions.length}
-          className="btn-island-primary w-full justify-center"
-        >
-          {isSaving ? (
-            <Loader2 className="size-4 animate-spin" />
-          ) : (
-            <Check className="size-4" />
-          )}
-          {isSaving ? "Đang lưu..." : "Lưu tọa độ"}
-        </button>
-
-        <button
-          type="button"
-          onClick={clearAll}
-          className="inline-flex items-center justify-center gap-2 text-sm text-ink-light hover:text-foreground transition cursor-pointer"
-        >
-          <RotateCcw className="size-4" /> Đặt lại
-        </button>
-
-        {message && (
-          <p
-            role="status"
-            className={`rounded-xl px-3 py-2 text-sm ${message.type === "success" ? "bg-success/8 text-success" : "bg-danger/8 text-danger"}`}
+          <button
+            type="button" onClick={saveRegions} disabled={isSaving || !regions.length}
+            className="btn-island-primary w-full justify-center"
           >
-            {message.text}
-          </p>
-        )}
-      </aside>
+            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+            {isSaving ? "Đang lưu..." : "Lưu tọa độ"}
+          </button>
+
+          <button
+            type="button" onClick={clearAll}
+            className="inline-flex items-center justify-center gap-2 text-sm text-ink-light hover:text-foreground transition cursor-pointer"
+          >
+            <RotateCcw className="size-4" /> Đặt lại
+          </button>
+
+          {message && (
+            <p role="status" className={`rounded-xl px-3 py-2 text-sm ${message.type === "success" ? "bg-success/8 text-success" : "bg-danger/8 text-danger"}`}>
+              {message.text}
+            </p>
+          )}
+        </aside>
+      </div>
     </div>
   );
 }
