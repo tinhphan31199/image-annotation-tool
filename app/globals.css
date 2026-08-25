@@ -37,6 +37,12 @@
   --color-foreground: var(--foreground);
   --color-background: var(--background);
   --color-region-highlight: var(--region-highlight);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-light: var(--ink-light);
+  --color-danger: var(--danger);
+  --color-success: var(--success);
+  --color-warn: var(--warn);
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -60,8 +66,8 @@
   --secondary-foreground: oklch(0.205 0 0);
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --accent: oklch(0.546 0.22 264);
+  --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.577 0.245 27.325);
   --border: oklch(0.922 0 0);
   --input: oklch(0.922 0 0);
@@ -73,6 +79,12 @@
   --chart-5: oklch(0.269 0 0);
   --radius: 0.625rem;
   --region-highlight: oklch(0.78 0.22 145);
+  --ink: #1c1c1a;
+  --ink-muted: #7a7a75;
+  --ink-light: #a8a8a3;
+  --danger: #dc2626;
+  --success: #16a34a;
+  --warn: #d97706;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -81,6 +93,91 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+}
+
+/* ── Custom component classes ── */
+@layer base {
+  .double-bezel {
+    @apply relative overflow-hidden;
+    background: rgba(0, 0, 0, 0.025);
+    padding: 1.5px;
+    border-radius: 1.25rem;
+  }
+  .double-bezel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(145deg, rgba(0,0,0,0.07) 0%, rgba(0,0,0,0.02) 40%, transparent 100%);
+    pointer-events: none;
+  }
+  .double-bezel-inner {
+    background: #ffffff;
+    border-radius: calc(1.25rem - 1.5px);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.04);
+    height: 100%;
+    transition: box-shadow 0.25s cubic-bezier(0.32,0.72,0,1);
+  }
+  .double-bezel:hover .double-bezel-inner {
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
+  }
+
+  .glass-panel {
+    @apply bg-white/80 backdrop-blur-xl;
+    border: 1px solid rgba(0,0,0,0.04);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 3px rgba(0,0,0,0.03);
+  }
+
+  .btn-island {
+    @apply inline-flex items-center gap-2.5 rounded-full font-medium text-sm cursor-pointer select-none;
+    transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+  }
+  .btn-island:active {
+    transform: scale(0.97) translateY(1px);
+    transition-duration: 0.1s;
+  }
+  .btn-island:focus-visible {
+    @apply outline-none ring-2 ring-accent/40 ring-offset-2;
+  }
+  .btn-island-primary {
+    @apply btn-island px-7 py-3 bg-accent text-white;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  }
+  .btn-island-primary:hover {
+    @apply bg-accent-light;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.03);
+    transform: translateY(-1.5px);
+  }
+  .btn-island-secondary {
+    @apply btn-island px-6 py-2.5 bg-black/[0.035] text-ink-muted;
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  }
+  .btn-island-secondary:hover {
+    @apply bg-black/[0.06] text-ink;
+    transform: translateY(-1px);
+  }
+  .btn-island-icon {
+    @apply w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20;
+    transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+  }
+  .btn-island:hover .btn-island-icon {
+    @apply bg-white/30;
+    transform: translate(1px, -1px) scale(1.05);
+  }
+}
+
+.dark .double-bezel {
+  background: rgba(255, 255, 255, 0.04);
+}
+.dark .double-bezel-inner {
+  background: #1a1a1a;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.2);
+}
+.dark .glass-panel {
+  @apply bg-black/60;
+  border: 1px solid rgba(255,255,255,0.06);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 3px rgba(0,0,0,0.2);
 }
 
 .dark {
