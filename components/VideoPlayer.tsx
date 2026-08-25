@@ -137,7 +137,7 @@ export default function VideoPlayer({
           >
             <video
               ref={video}
-              src={`${baseUrl}/api/video/${videoId}`}
+              src={`${baseUrl}/api/video/${videoId}?duration=10`}
               className="absolute inset-0 w-full h-full object-contain"
               controls={false}
               playsInline

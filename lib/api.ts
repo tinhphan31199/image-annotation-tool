@@ -13,7 +13,7 @@ export interface SubtitleStyle {
 
 export function getVideoUrl(videoId: string, baseUrl?: string): string {
   const base = baseUrl || '';
-  return `${base}/api/video/${videoId}`;
+  return `${base}/api/video/${videoId}?duration=10`;
 }
 
 // ── SRT / Timeline check ──
