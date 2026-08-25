@@ -321,126 +321,127 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
         </div>
       </div>
 
-      {/* Video / Image — same frame as OCR tab */}
-      <div className="double-bezel">
-        <div className="double-bezel-inner overflow-hidden">
-          <div
-            ref={containerRef}
-            className="relative bg-black select-none mx-auto touch-none"
-            style={{ width: size.w, height: size.h, maxWidth: "100%" }}
-          >
-            {isVideo ? (
-              <video
-                ref={videoRef}
-                src={imageUrl}
-                className="absolute inset-0 w-full h-full object-contain"
-                preload="metadata"
-                playsInline
-                controls={false}
-                onLoadedMetadata={(event) => {
-                  const v = event.currentTarget;
-                  setMediaLoaded(true);
-                  setDuration(v.duration);
-                  const cw = containerRef.current?.clientWidth || 800;
-                  const r = v.videoWidth / v.videoHeight || 16 / 9;
-                  setSize({ w: Math.min(cw, v.videoWidth), h: Math.min(cw, v.videoWidth) / r });
-                }}
-                onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-                onPlay={() => setIsPlaying(true)}
-                onPause={() => { setIsPlaying(false); setCurrentTime(videoRef.current?.currentTime ?? 0); }}
-                onError={() => setMediaLoaded(false)}
-              />
-            ) : (
-              <img
-                src={imageUrl}
-                alt="Ảnh cần xoá watermark"
-                className="absolute inset-0 w-full h-full object-contain"
-                onLoad={(e) => {
-                  setMediaLoaded(true);
-                  const el = e.currentTarget;
-                  const cw = containerRef.current?.clientWidth || 800;
-                  const r = el.naturalWidth / el.naturalHeight;
-                  setSize({ w: Math.min(cw, el.naturalWidth), h: Math.min(cw, el.naturalWidth) / r });
-                }}
-                onError={() => setMediaLoaded(false)}
-              />
-            )}
-
-            {!mediaLoaded && (
-              <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/40">
-                Không thể tải {isVideo ? "video" : "ảnh"} từ URL này.
-              </div>
-            )}
-
-            {mediaLoaded && (
-              <canvas
-                ref={canvasRef}
-                width={size.w}
-                height={size.h}
-                className="absolute inset-0 touch-none"
-                onPointerDown={onPointerDown}
-                onPointerMove={onPointerMove}
-                onPointerUp={onPointerUp}
-                onPointerLeave={onPointerUp}
-              />
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Timeline — same glass-panel as OCR */}
-      {isVideo && (
-        <div className="glass-panel rounded-2xl px-3 py-2.5 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause(); }}
-              aria-label={isPlaying ? "Tạm dừng" : "Phát"}
-              className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center
-                         hover:bg-accent shadow-sm active:scale-[0.95] transition-all duration-300
-                         ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
-            >
-              {isPlaying ? (
-                <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-              ) : (
-                <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-              )}
-            </button>
-          </div>
-          <span className="text-[11px] font-mono text-ink-light tabular-nums tracking-tight">
-            {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
-          </span>
-        </div>
-      )}
-      {isVideo && (
-        <div
-          ref={timelineRef}
-          className="relative h-8 flex items-center cursor-pointer group select-none -mt-3"
-          onMouseDown={(e) => {
-            const v = videoRef.current, bar = timelineRef.current;
-            if (!v || !bar || !duration) return;
-            const rect = bar.getBoundingClientRect();
-            v.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
-          }}
-          onMouseMove={(e) => { if (e.buttons !== 1) return; onMouseDown; }}
-        >
-          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/[0.06] overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-150" style={{ width: `${pct}%` }} />
-          </div>
-          <div
-            className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-accent shadow-sm transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none"
-            style={{ left: `calc(${pct}% - 7px)` }}
-          />
-          <div className="absolute -bottom-5 inset-x-0 flex justify-between text-[10px] font-mono text-ink-light pointer-events-none">
-            <span>{formatTime(currentTime)}</span>
-            <span>{formatTime(duration)}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Sidebar */}
+      {/* Main layout: Video + Sidebar side by side */}
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-        <div />
+        {/* Left: Video + Timeline */}
+        <div className="space-y-4">
+          <div className="double-bezel">
+            <div className="double-bezel-inner overflow-hidden">
+              <div
+                ref={containerRef}
+                className="relative bg-black select-none mx-auto touch-none"
+                style={{ width: size.w, height: size.h, maxWidth: "100%" }}
+              >
+                {isVideo ? (
+                  <video
+                    ref={videoRef}
+                    src={imageUrl}
+                    className="absolute inset-0 w-full h-full object-contain"
+                    preload="metadata"
+                    playsInline
+                    controls={false}
+                    onLoadedMetadata={(event) => {
+                      const v = event.currentTarget;
+                      setMediaLoaded(true);
+                      setDuration(v.duration);
+                      const cw = containerRef.current?.clientWidth || 800;
+                      const r = v.videoWidth / v.videoHeight || 16 / 9;
+                      setSize({ w: Math.min(cw, v.videoWidth), h: Math.min(cw, v.videoWidth) / r });
+                    }}
+                    onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+                    onPlay={() => setIsPlaying(true)}
+                    onPause={() => { setIsPlaying(false); setCurrentTime(videoRef.current?.currentTime ?? 0); }}
+                    onError={() => setMediaLoaded(false)}
+                  />
+                ) : (
+                  <img
+                    src={imageUrl}
+                    alt="Ảnh cần xoá watermark"
+                    className="absolute inset-0 w-full h-full object-contain"
+                    onLoad={(e) => {
+                      setMediaLoaded(true);
+                      const el = e.currentTarget;
+                      const cw = containerRef.current?.clientWidth || 800;
+                      const r = el.naturalWidth / el.naturalHeight;
+                      setSize({ w: Math.min(cw, el.naturalWidth), h: Math.min(cw, el.naturalWidth) / r });
+                    }}
+                    onError={() => setMediaLoaded(false)}
+                  />
+                )}
 
+                {!mediaLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/40">
+                    Không thể tải {isVideo ? "video" : "ảnh"} từ URL này.
+                  </div>
+                )}
+
+                {mediaLoaded && (
+                  <canvas
+                    ref={canvasRef}
+                    width={size.w}
+                    height={size.h}
+                    className="absolute inset-0 touch-none"
+                    onPointerDown={onPointerDown}
+                    onPointerMove={onPointerMove}
+                    onPointerUp={onPointerUp}
+                    onPointerLeave={onPointerUp}
+                  />
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Timeline */}
+          {isVideo && (
+            <>
+              <div className="glass-panel rounded-2xl px-3 py-2.5 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause(); }}
+                    aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+                    className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center
+                               hover:bg-accent shadow-sm active:scale-[0.95] transition-all duration-300
+                               ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+                  >
+                    {isPlaying ? (
+                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                    ) : (
+                      <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    )}
+                  </button>
+                </div>
+                <span className="text-[11px] font-mono text-ink-light tabular-nums tracking-tight">
+                  {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
+                </span>
+              </div>
+              <div
+                ref={timelineRef}
+                className="relative h-8 flex items-center cursor-pointer group select-none -mt-3"
+                onMouseDown={(e) => {
+                  const v = videoRef.current, bar = timelineRef.current;
+                  if (!v || !bar || !duration) return;
+                  const rect = bar.getBoundingClientRect();
+                  v.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
+                }}
+                onMouseMove={(e) => { if (e.buttons !== 1) return; }}
+              >
+                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/[0.06] overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-150" style={{ width: `${pct}%` }} />
+                </div>
+                <div
+                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-accent shadow-sm transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none"
+                  style={{ left: `calc(${pct}% - 7px)` }}
+                />
+                <div className="absolute -bottom-5 inset-x-0 flex justify-between text-[10px] font-mono text-ink-light pointer-events-none">
+                  <span>{formatTime(currentTime)}</span>
+                  <span>{formatTime(duration)}</span>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Right: Sidebar */}
         <aside className="flex flex-col gap-5">
           {/* Session info */}
           <div className="double-bezel">
