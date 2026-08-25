@@ -149,6 +149,17 @@ export async function resolveTimelineReview(
   });
 }
 
+export async function resolveVoiceReview(
+  videoId: string,
+  baseUrl?: string,
+): Promise<void> {
+  await fetch(`${jbase(baseUrl)}/api/pipeline/${videoId}/voice`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'continue' }),
+  });
+}
+
 // ── Voice check ──
 
 export interface CapCutVoice {

@@ -10,6 +10,7 @@ import {
   setTtsSpeed,
   checkTtsAlignment,
   getTtsAudioUrl,
+  resolveVoiceReview,
   type SrtEntry,
   type VoiceMapDetail,
   type AlignmentIssue,
@@ -163,6 +164,19 @@ export default function VoiceCheckTab({ videoId, baseUrl = "" }: Props) {
       showToast("Không kiểm tra được");
     } finally {
       setCheckingAlignment(false);
+    }
+  };
+
+  const [resolving, setResolving] = useState(false);
+  const handleContinue = async () => {
+    setResolving(true);
+    try {
+      await resolveVoiceReview(videoId, baseUrl);
+      showToast(t("voice.continued"));
+    } catch {
+      showToast("Không gửi được lệnh tiếp tục");
+    } finally {
+      setResolving(false);
     }
   };
 
@@ -354,6 +368,25 @@ export default function VoiceCheckTab({ videoId, baseUrl = "" }: Props) {
           {toast}
         </div>
       )}
+
+      {/* Sticky action bar — confirm voice check */}
+      <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-5 pt-8 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none">
+        <div className="mx-auto max-w-3xl flex items-center gap-2 pointer-events-auto">
+          <button
+            type="button"
+            onClick={handleContinue}
+            disabled={resolving || entries.length === 0}
+            className="btn-island-primary flex-1 justify-center group"
+          >
+            {resolving ? t("voice.saving") : t("voice.continue")}
+            <span className="btn-island-icon">
+              <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </span>
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

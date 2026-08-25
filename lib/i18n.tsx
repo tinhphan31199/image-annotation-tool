@@ -72,6 +72,9 @@ const strings: Record<string, string> = {
   "voice.applyBulk": "Áp dụng",
   "voice.speed": "Tốc độ",
   "voice.loadError": "Không tải được voice map",
+  "voice.continue": "Tiếp tục",
+  "voice.saving": "Đang gửi…",
+  "voice.continued": "Đã gửi tiếp tục — pipeline sẽ chạy tiếp",
 };
 
 export function useI18n() {
