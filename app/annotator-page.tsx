@@ -30,7 +30,7 @@ export function AnnotatorPage() {
       <div className="px-5 pt-6 pb-2 lg:px-8">
         <header className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-white/80 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)] ring-1 ring-black/[0.04] px-5 py-3 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex size-9 items-center justify-center rounded-2xl bg-[#1a1a18] font-mono text-xs font-bold text-[#f8f8f6]">
+            <div className="flex size-9 items-center justify-center rounded-2xl bg-[#3563e9] font-mono text-xs font-bold text-white">
               RX
             </div>
             <div className="hidden sm:block">
@@ -68,8 +68,8 @@ export function AnnotatorPage() {
               onClick={() => setTab(t.id)}
               className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
                 tab === t.id
-                  ? 'bg-[#1a1a18] text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
-                  : 'text-[#6b6b66] hover:text-[#1a1a18] hover:bg-[#f0efed]/60'
+                  ? 'bg-[#3563e9] text-white shadow-[0_2px_8px_rgba(53,99,233,0.25)]'
+                  : 'text-[#6b6b66] hover:text-[#3563e9] hover:bg-[#3563e9]/5'
               }`}
             >
               <span className="text-xs opacity-60">{t.icon}</span>
