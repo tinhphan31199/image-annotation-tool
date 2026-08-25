@@ -5,14 +5,18 @@ import { useState } from "react";
 import { RegionSelector } from "@/components/region-selector";
 import OcrRegionSelector from "@/components/OcrRegionSelector";
 import SubtitlePreview from "@/components/SubtitlePreview";
+import TimelineCheckTab from "@/components/TimelineCheckTab";
+import VoiceCheckTab from "@/components/VoiceCheckTab";
 import type { Region } from "@/lib/api";
 
-type Tab = "watermark" | "ocr" | "subtitle";
+type Tab = "watermark" | "ocr" | "subtitle" | "timeline" | "voice";
 
 const TABS: { id: Tab; label: string }[] = [
   { id: "watermark", label: "Xoá watermark" },
   { id: "ocr", label: "Vùng quét sub" },
   { id: "subtitle", label: "Kích thước sub" },
+  { id: "timeline", label: "Kiểm tra sub" },
+  { id: "voice", label: "Voice" },
 ];
 
 export function AnnotatorPage() {
@@ -101,6 +105,10 @@ export function AnnotatorPage() {
           </div>
         ) : tab === "watermark" ? (
           <RegionSelector imageUrl={imageUrl} videoId={videoId} />
+        ) : tab === "timeline" ? (
+          <TimelineCheckTab videoId={videoId} baseUrl={baseUrl} />
+        ) : tab === "voice" ? (
+          <VoiceCheckTab videoId={videoId} baseUrl={baseUrl} />
         ) : tab === "ocr" ? (
           <OcrRegionSelector
             videoId={videoId}
