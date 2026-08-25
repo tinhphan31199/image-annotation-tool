@@ -85,99 +85,151 @@
   --danger: #dc2626;
   --success: #16a34a;
   --warn: #d97706;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
 }
 
-/* ── Custom component classes ── */
-@layer base {
-  .double-bezel {
-    @apply relative overflow-hidden;
-    background: rgba(0, 0, 0, 0.025);
-    padding: 1.5px;
-    border-radius: 1.25rem;
-  }
-  .double-bezel::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(145deg, rgba(0,0,0,0.07) 0%, rgba(0,0,0,0.02) 40%, transparent 100%);
-    pointer-events: none;
-  }
-  .double-bezel-inner {
-    background: #ffffff;
-    border-radius: calc(1.25rem - 1.5px);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.04);
-    height: 100%;
-    transition: box-shadow 0.25s cubic-bezier(0.32,0.72,0,1);
-  }
-  .double-bezel:hover .double-bezel-inner {
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
-  }
-
-  .glass-panel {
-    @apply bg-white/80 backdrop-blur-xl;
-    border: 1px solid rgba(0,0,0,0.04);
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 3px rgba(0,0,0,0.03);
-  }
-
-  .btn-island {
-    @apply inline-flex items-center gap-2.5 rounded-full font-medium text-sm cursor-pointer select-none;
-    transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
-  }
-  .btn-island:active {
-    transform: scale(0.97) translateY(1px);
-    transition-duration: 0.1s;
-  }
-  .btn-island:focus-visible {
-    @apply outline-none ring-2 ring-accent/40 ring-offset-2;
-  }
-  .btn-island-primary {
-    @apply btn-island px-7 py-3 bg-accent text-white;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
-  }
-  .btn-island-primary:hover {
-    @apply bg-accent-light;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.03);
-    transform: translateY(-1.5px);
-  }
-  .btn-island-secondary {
-    @apply btn-island px-6 py-2.5 bg-black/[0.035] text-ink-muted;
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
-  }
-  .btn-island-secondary:hover {
-    @apply bg-black/[0.06] text-ink;
-    transform: translateY(-1px);
-  }
-  .btn-island-icon {
-    @apply w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-white/20;
-    transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
-  }
-  .btn-island:hover .btn-island-icon {
-    @apply bg-white/30;
-    transform: translate(1px, -1px) scale(1.05);
-  }
+/* ── double-bezel ── */
+.double-bezel {
+  position: relative;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.025);
+  padding: 1.5px;
+  border-radius: 1.25rem;
+}
+.double-bezel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(145deg, rgba(0,0,0,0.07) 0%, rgba(0,0,0,0.02) 40%, transparent 100%);
+  pointer-events: none;
+}
+.double-bezel-inner {
+  background: #ffffff;
+  border-radius: calc(1.25rem - 1.5px);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.02), 0 1px 3px rgba(0,0,0,0.04);
+  height: 100%;
+  transition: box-shadow 0.25s cubic-bezier(0.32,0.72,0,1);
+}
+.double-bezel:hover .double-bezel-inner {
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.95), inset 0 -1px 0 rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.06), 0 1px 4px rgba(0,0,0,0.03);
 }
 
-.dark .double-bezel {
-  background: rgba(255, 255, 255, 0.04);
+/* ── glass-panel ── */
+.glass-panel {
+  background: rgba(255,255,255,0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(0,0,0,0.04);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.6), 0 1px 3px rgba(0,0,0,0.03);
 }
+
+/* ── btn-island ── */
+.btn-island {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.btn-island:active {
+  transform: scale(0.97) translateY(1px);
+  transition-duration: 0.1s;
+}
+.btn-island:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.4);
+  outline-offset: 2px;
+}
+.btn-island-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.75rem 1.75rem;
+  background: #2563eb;
+  color: #fff;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 1px 2px rgba(0,0,0,0.02);
+  transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.btn-island-primary:hover {
+  background: #3b82f6;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.03);
+  transform: translateY(-1.5px);
+}
+.btn-island-primary:active {
+  transform: scale(0.97) translateY(1px);
+}
+.btn-island-primary:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(37,99,235,0.4);
+  outline-offset: 2px;
+}
+.btn-island-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  border-radius: 9999px;
+  font-weight: 500;
+  font-size: 0.875rem;
+  cursor: pointer;
+  user-select: none;
+  padding: 0.625rem 1.5rem;
+  background: rgba(0,0,0,0.035);
+  color: #7a7a75;
+  box-shadow: inset 0 0 0 1px rgba(0,0,0,0.05);
+  transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.btn-island-secondary:hover {
+  background: rgba(0,0,0,0.06);
+  color: #1c1c1a;
+  transform: translateY(-1px);
+}
+.btn-island-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: rgba(255,255,255,0.2);
+  transition: all 0.3s cubic-bezier(0.32,0.72,0,1);
+}
+.btn-island:hover .btn-island-icon {
+  background: rgba(255,255,255,0.3);
+  transform: translate(1px, -1px) scale(1.05);
+}
+
+/* ── dark overrides ── */
+.dark .double-bezel { background: rgba(255, 255, 255, 0.04); }
 .dark .double-bezel-inner {
   background: #1a1a1a;
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), inset 0 -1px 0 rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.2);
 }
 .dark .glass-panel {
-  @apply bg-black/60;
+  background: rgba(0,0,0,0.6);
   border: 1px solid rgba(255,255,255,0.06);
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.04), 0 1px 3px rgba(0,0,0,0.2);
+}
+
+/* ── base reset ── */
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
 }
 
 .dark {
@@ -205,14 +257,6 @@
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -241,22 +285,5 @@
     --chart-3: oklch(0.439 0 0);
     --chart-4: oklch(0.371 0 0);
     --chart-5: oklch(0.269 0 0);
-    --sidebar: oklch(0.205 0 0);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
-    --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(1 0 0 / 10%);
-    --sidebar-ring: oklch(0.556 0 0);
-  }
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
   }
 }
