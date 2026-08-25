@@ -9,6 +9,12 @@ import type { Region } from '@/lib/api'
 
 type Tab = 'watermark' | 'ocr' | 'subtitle'
 
+const TABS: { id: Tab; label: string; icon: string }[] = [
+  { id: 'watermark', label: 'Xoá watermark', icon: '◻' },
+  { id: 'ocr', label: 'Vùng quét sub', icon: '⊡' },
+  { id: 'subtitle', label: 'Kích thước sub', icon: '≡' },
+]
+
 export function AnnotatorPage() {
   const params = useSearchParams()
   const imageUrl = params.get('url') ?? ''
@@ -18,48 +24,55 @@ export function AnnotatorPage() {
   const [tab, setTab] = useState<Tab>((params.get('mode') as Tab) || 'watermark')
   const [ocrRegion, setOcrRegion] = useState<Region | null>(null)
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: 'watermark', label: 'Xoá watermark' },
-    { id: 'ocr', label: 'Vùng quét sub' },
-    { id: 'subtitle', label: 'Kích thước sub' },
-  ]
-
   return (
-    <main className="min-h-screen bg-background text-foreground">
-      <header className="border-b border-border bg-card/80 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-5 py-5 lg:px-8">
+    <main className="min-h-[100dvh] bg-[#f8f8f6] text-[#1a1a18]">
+      {/* ── Floating pill header ── */}
+      <div className="px-5 pt-6 pb-2 lg:px-8">
+        <header className="mx-auto flex max-w-6xl items-center justify-between rounded-full bg-white/80 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_16px_rgba(0,0,0,0.02)] ring-1 ring-black/[0.04] px-5 py-3 lg:px-8">
           <div className="flex items-center gap-3">
-            <div className="flex size-10 items-center justify-center rounded-xl bg-primary font-mono text-sm font-bold text-primary-foreground">RX</div>
-            <div>
-              <p className="font-mono text-[10px] uppercase tracking-[0.22em] text-muted-foreground">Region annotator</p>
-              <h1 className="text-lg font-semibold tracking-tight">Đánh dấu vùng ảnh</h1>
+            <div className="flex size-9 items-center justify-center rounded-2xl bg-[#1a1a18] font-mono text-xs font-bold text-[#f8f8f6]">
+              RX
+            </div>
+            <div className="hidden sm:block">
+              <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-[#9a9a95]">Region annotator</p>
+              <h1 className="text-sm font-semibold tracking-tight leading-tight">Đánh dấu vùng</h1>
             </div>
           </div>
-          <div className="hidden items-center gap-2 rounded-full border border-border px-3 py-1.5 font-mono text-xs text-muted-foreground sm:flex">
-            <span className="size-1.5 rounded-full bg-primary" /> Normalized mode
+          <div className="flex items-center gap-2 rounded-full bg-[#f0efed] px-3 py-1.5 font-mono text-[10px] text-[#6b6b66]">
+            <span className="size-1.5 rounded-full bg-[#22c55e]" />
+            Normalized
           </div>
-        </div>
-      </header>
+        </header>
+      </div>
 
-      <div className="mx-auto max-w-7xl px-5 py-8 lg:px-8 lg:py-12">
-        <div className="mb-8 max-w-2xl">
-          <p className="font-mono text-xs uppercase tracking-[0.2em] text-primary">01 / Annotate</p>
-          <h2 className="mt-3 text-balance text-3xl font-semibold tracking-tight sm:text-4xl">Khoanh chính xác những vùng cần lưu.</h2>
-          <p className="mt-3 text-pretty leading-6 text-muted-foreground">Kéo trực tiếp trên ảnh/video để tạo một hoặc nhiều vùng. Tọa độ được gửi theo tỷ lệ (0–1), cùng với video ID.</p>
+      <div className="mx-auto max-w-6xl px-5 py-12 lg:px-8 lg:py-16">
+        {/* ── Hero section ── */}
+        <div className="mb-12 max-w-2xl">
+          <span className="inline-flex items-center rounded-full bg-[#3563e9]/8 px-3 py-1 font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-[#3563e9]">
+            01 / Annotate
+          </span>
+          <h2 className="mt-4 text-balance text-4xl font-semibold tracking-[-0.02em] sm:text-5xl leading-[1.1]">
+            Khoanh chính xác<br />
+            <span className="text-[#6b6b66]">những vùng cần lưu.</span>
+          </h2>
+          <p className="mt-5 text-lg leading-7 text-[#6b6b66] max-w-xl">
+            Kéo trực tiếp trên ảnh/video để tạo vùng. Tọa độ tỷ lệ (0–1), gửi kèm video ID.
+          </p>
         </div>
 
-        {/* ── Tab bar ── */}
-        <div className="mb-6 flex gap-1 rounded-xl bg-muted/50 p-1 w-fit">
-          {tabs.map((t) => (
+        {/* ── Floating tab bar ── */}
+        <div className="mb-8 inline-flex items-center gap-1 rounded-2xl bg-white p-1.5 shadow-[0_1px_3px_rgba(0,0,0,0.04),0_4px_12px_rgba(0,0,0,0.02)] ring-1 ring-black/[0.04]">
+          {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition-all cursor-pointer ${
+              className={`flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-medium transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer ${
                 tab === t.id
-                  ? 'bg-background text-foreground shadow-sm'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-background/50'
+                  ? 'bg-[#1a1a18] text-white shadow-[0_2px_8px_rgba(0,0,0,0.12)]'
+                  : 'text-[#6b6b66] hover:text-[#1a1a18] hover:bg-[#f0efed]/60'
               }`}
             >
+              <span className="text-xs opacity-60">{t.icon}</span>
               {t.label}
             </button>
           ))}
@@ -67,9 +80,17 @@ export function AnnotatorPage() {
 
         {/* ── Tab content ── */}
         {!imageUrl ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center">
-            <p className="font-semibold">Chưa có ảnh để đánh dấu</p>
-            <p className="mt-2 text-sm text-muted-foreground">Mở app với dạng <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">?url=...&videoid=...&mode=watermark</code></p>
+          <div className="rounded-3xl border border-dashed border-[#e5e4e1] bg-white p-16 text-center shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+            <div className="mx-auto mb-4 flex size-14 items-center justify-center rounded-2xl bg-[#f0efed]">
+              <span className="text-2xl text-[#9a9a95]">◎</span>
+            </div>
+            <p className="text-lg font-semibold">Chưa có ảnh để đánh dấu</p>
+            <p className="mt-2 text-sm text-[#9a9a95]">
+              Mở app với{' '}
+              <code className="rounded-lg bg-[#f0efed] px-2 py-1 font-mono text-xs text-[#6b6b66]">
+                ?url=...&videoid=...&mode=watermark
+              </code>
+            </p>
           </div>
         ) : tab === 'watermark' ? (
           <RegionSelector imageUrl={imageUrl} videoId={videoId} />
@@ -79,7 +100,6 @@ export function AnnotatorPage() {
             baseUrl={baseUrl}
             onConfirmed={(region, startTime) => {
               setOcrRegion(region)
-              // POST to backend
               fetch(`${baseUrl}/api/region/${videoId}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
