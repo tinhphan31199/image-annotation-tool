@@ -306,6 +306,16 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
 
   const pct = duration > 0 ? (currentTime / duration) * 100 : 0;
 
+  const seekTimeline = (clientX: number) => {
+    const v = videoRef.current;
+    const bar = timelineRef.current;
+    if (!v || !bar || !duration) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = clamp((clientX - rect.left) / rect.width);
+    v.currentTime = ratio * duration;
+    setCurrentTime(v.currentTime);
+  };
+
   return (
     <div className="space-y-5">
       {/* Instructions bar */}
@@ -321,269 +331,256 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
         </div>
       </div>
 
-      {/* Main layout: Video + Sidebar side by side */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-        {/* Left: Video + Timeline */}
-        <div className="space-y-4">
-          <div className="double-bezel">
-            <div className="double-bezel-inner overflow-hidden">
-              <div
-                ref={containerRef}
-                className="relative bg-black select-none mx-auto touch-none"
-                style={{ width: size.w, height: size.h, maxWidth: "100%" }}
-              >
-                {isVideo ? (
-                  <video
-                    ref={videoRef}
-                    src={imageUrl}
-                    className="absolute inset-0 w-full h-full object-contain"
-                    preload="metadata"
-                    playsInline
-                    controls={false}
-                    onLoadedMetadata={(event) => {
-                      const v = event.currentTarget;
-                      setMediaLoaded(true);
-                      setDuration(v.duration);
-                      const cw = containerRef.current?.clientWidth || 800;
-                      const r = v.videoWidth / v.videoHeight || 16 / 9;
-                      setSize({ w: Math.min(cw, v.videoWidth), h: Math.min(cw, v.videoWidth) / r });
-                    }}
-                    onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
-                    onPlay={() => setIsPlaying(true)}
-                    onPause={() => { setIsPlaying(false); setCurrentTime(videoRef.current?.currentTime ?? 0); }}
-                    onError={() => setMediaLoaded(false)}
-                  />
-                ) : (
-                  <img
-                    src={imageUrl}
-                    alt="Ảnh cần xoá watermark"
-                    className="absolute inset-0 w-full h-full object-contain"
-                    onLoad={(e) => {
-                      setMediaLoaded(true);
-                      const el = e.currentTarget;
-                      const cw = containerRef.current?.clientWidth || 800;
-                      const r = el.naturalWidth / el.naturalHeight;
-                      setSize({ w: Math.min(cw, el.naturalWidth), h: Math.min(cw, el.naturalWidth) / r });
-                    }}
-                    onError={() => setMediaLoaded(false)}
-                  />
-                )}
+      {/* Video frame */}
+      <div className="double-bezel">
+        <div className="double-bezel-inner overflow-hidden">
+          <div
+            ref={containerRef}
+            className="relative bg-black select-none mx-auto touch-none"
+            style={{ width: size.w, height: size.h, maxWidth: "100%" }}
+          >
+            {isVideo ? (
+              <video
+                ref={videoRef}
+                src={imageUrl}
+                className="absolute inset-0 w-full h-full object-contain"
+                preload="metadata"
+                playsInline
+                controls={false}
+                onLoadedMetadata={(event) => {
+                  const v = event.currentTarget;
+                  setMediaLoaded(true);
+                  setDuration(v.duration);
+                  const cw = containerRef.current?.clientWidth || 800;
+                  const r = v.videoWidth / v.videoHeight || 16 / 9;
+                  setSize({ w: Math.min(cw, v.videoWidth), h: Math.min(cw, v.videoWidth) / r });
+                }}
+                onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => { setIsPlaying(false); setCurrentTime(videoRef.current?.currentTime ?? 0); }}
+                onError={() => setMediaLoaded(false)}
+              />
+            ) : (
+              <img
+                src={imageUrl}
+                alt="Ảnh cần xoá watermark"
+                className="absolute inset-0 w-full h-full object-contain"
+                onLoad={(e) => {
+                  setMediaLoaded(true);
+                  const el = e.currentTarget;
+                  const cw = containerRef.current?.clientWidth || 800;
+                  const r = el.naturalWidth / el.naturalHeight;
+                  setSize({ w: Math.min(cw, el.naturalWidth), h: Math.min(cw, el.naturalWidth) / r });
+                }}
+                onError={() => setMediaLoaded(false)}
+              />
+            )}
 
-                {!mediaLoaded && (
-                  <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/40">
-                    Không thể tải {isVideo ? "video" : "ảnh"} từ URL này.
-                  </div>
-                )}
-
-                {mediaLoaded && (
-                  <canvas
-                    ref={canvasRef}
-                    width={size.w}
-                    height={size.h}
-                    className="absolute inset-0 touch-none"
-                    onPointerDown={onPointerDown}
-                    onPointerMove={onPointerMove}
-                    onPointerUp={onPointerUp}
-                    onPointerLeave={onPointerUp}
-                  />
-                )}
+            {!mediaLoaded && (
+              <div className="absolute inset-0 flex items-center justify-center p-8 text-center text-sm text-white/40">
+                Không thể tải {isVideo ? "video" : "ảnh"} từ URL này.
               </div>
+            )}
+
+            {mediaLoaded && (
+              <canvas
+                ref={canvasRef}
+                width={size.w}
+                height={size.h}
+                className="absolute inset-0 touch-none"
+                onPointerDown={onPointerDown}
+                onPointerMove={onPointerMove}
+                onPointerUp={onPointerUp}
+                onPointerLeave={onPointerUp}
+              />
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Timeline */}
+      {isVideo && (
+        <div className="space-y-2">
+          <div className="glass-panel rounded-2xl px-3 py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause(); }}
+                aria-label={isPlaying ? "Tạm dừng" : "Phát"}
+                className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center
+                           hover:bg-accent shadow-sm active:scale-[0.95] transition-all duration-300
+                           ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
+              >
+                {isPlaying ? (
+                  <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+                ) : (
+                  <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                )}
+              </button>
             </div>
+            <span className="text-[11px] font-mono text-ink-light tabular-nums tracking-tight">
+              {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
+            </span>
           </div>
 
-          {/* Timeline */}
-          {isVideo && (
-            <>
-              <div className="glass-panel rounded-2xl px-3 py-2.5 flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => { const v = videoRef.current; if (v) v.paused ? v.play() : v.pause(); }}
-                    aria-label={isPlaying ? "Tạm dừng" : "Phát"}
-                    className="w-10 h-10 rounded-full bg-accent text-white flex items-center justify-center
-                               hover:bg-accent shadow-sm active:scale-[0.95] transition-all duration-300
-                               ease-[cubic-bezier(0.32,0.72,0,1)] cursor-pointer"
-                  >
-                    {isPlaying ? (
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
-                    ) : (
-                      <svg className="w-4 h-4 ml-0.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                    )}
-                  </button>
+          <div
+            ref={timelineRef}
+            className="relative h-6 flex items-center cursor-pointer group select-none"
+            onMouseDown={(e) => seekTimeline(e.clientX)}
+            onMouseMove={(e) => { if (e.buttons === 1) seekTimeline(e.clientX); }}
+          >
+            <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/[0.06] overflow-hidden">
+              <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-150" style={{ width: `${pct}%` }} />
+            </div>
+            <div
+              className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-accent shadow-sm transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none"
+              style={{ left: `calc(${pct}% - 7px)` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Two cards horizontal */}
+      <div className="grid gap-5 md:grid-cols-2">
+        {/* Session info */}
+        <div className="double-bezel">
+          <div className="double-bezel-inner p-5 h-full">
+            <div className="flex items-center gap-3">
+              <div className="flex size-8 items-center justify-center rounded-xl bg-accent/8">
+                <Crosshair className="size-4 text-accent" />
+              </div>
+              <div>
+                <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-light">Session</p>
+                <h3 className="text-sm font-semibold leading-tight">Thông tin phiên</h3>
+              </div>
+            </div>
+
+            <div className="mt-5 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <span className="text-[11px] text-ink-light">Video ID</span>
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="h-1.5 w-1.5 rounded-full bg-success shrink-0" />
+                  <span className="truncate font-mono text-xs text-ink">{videoId || "—"}</span>
                 </div>
-                <span className="text-[11px] font-mono text-ink-light tabular-nums tracking-tight">
-                  {formatTime(currentTime)} <span className="opacity-40">/</span> {formatTime(duration)}
+              </div>
+              <div className="h-px bg-black/[0.04]" />
+              <div className="flex items-start justify-between gap-3">
+                <span className="text-[11px] text-ink-light shrink-0">Nguồn</span>
+                <span className="truncate font-mono text-[10px] text-ink-light text-right">{imageUrl || "—"}</span>
+              </div>
+              <div className="h-px bg-black/[0.04]" />
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] text-ink-light">Số vùng</span>
+                <span className="inline-flex items-center justify-center min-w-[28px] h-6 rounded-lg bg-accent/8 px-2 font-mono text-xs font-semibold text-accent">
+                  {regions.length}
                 </span>
               </div>
-              <div
-                ref={timelineRef}
-                className="relative h-8 flex items-center cursor-pointer group select-none -mt-3"
-                onMouseDown={(e) => {
-                  const v = videoRef.current, bar = timelineRef.current;
-                  if (!v || !bar || !duration) return;
-                  const rect = bar.getBoundingClientRect();
-                  v.currentTime = ((e.clientX - rect.left) / rect.width) * duration;
-                }}
-                onMouseMove={(e) => { if (e.buttons !== 1) return; }}
-              >
-                <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-1 rounded-full bg-black/[0.06] overflow-hidden">
-                  <div className="h-full rounded-full bg-gradient-to-r from-blue-600 to-blue-400 transition-all duration-150" style={{ width: `${pct}%` }} />
-                </div>
-                <div
-                  className="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 rounded-full bg-white border-2 border-accent shadow-sm transition-opacity duration-200 opacity-0 group-hover:opacity-100 pointer-events-none"
-                  style={{ left: `calc(${pct}% - 7px)` }}
-                />
-                <div className="absolute -bottom-5 inset-x-0 flex justify-between text-[10px] font-mono text-ink-light pointer-events-none">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
-              </div>
-            </>
-          )}
+            </div>
+          </div>
         </div>
 
-        {/* Right: Sidebar */}
-        <aside className="flex flex-col gap-5">
-          {/* Session info */}
-          <div className="double-bezel">
-            <div className="double-bezel-inner p-5">
+        {/* Region list */}
+        <div className="double-bezel">
+          <div className="double-bezel-inner p-5 h-full">
+            <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="flex size-8 items-center justify-center rounded-xl bg-accent/8">
-                  <Crosshair className="size-4 text-accent" />
+                  <svg className="size-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
+                  </svg>
                 </div>
                 <div>
-                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-light">Session</p>
-                  <h3 className="text-sm font-semibold leading-tight">Thông tin phiên</h3>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-light">Regions</p>
+                  <h3 className="text-sm font-semibold leading-tight">Danh sách vùng</h3>
                 </div>
               </div>
-
-              <div className="mt-5 space-y-3">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-[11px] text-ink-light">Video ID</span>
-                  <div className="flex items-center gap-2">
-                    <span className="h-1.5 w-1.5 rounded-full bg-success shrink-0" />
-                    <span className="truncate font-mono text-xs text-ink max-w-[160px]">{videoId || "—"}</span>
-                  </div>
-                </div>
-                <div className="h-px bg-black/[0.04]" />
-                <div className="flex items-start justify-between gap-3">
-                  <span className="text-[11px] text-ink-light shrink-0">Nguồn</span>
-                  <span className="truncate font-mono text-[10px] text-ink-light text-right max-w-[180px]">{imageUrl || "—"}</span>
-                </div>
-                <div className="h-px bg-black/[0.04]" />
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] text-ink-light">Số vùng</span>
-                  <span className="inline-flex items-center justify-center min-w-[28px] h-6 rounded-lg bg-accent/8 px-2 font-mono text-xs font-semibold text-accent">
-                    {regions.length}
-                  </span>
-                </div>
-              </div>
+              <button
+                type="button" onClick={clearAll} disabled={!regions.length}
+                className="group flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-ink-light transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-danger/8 hover:text-danger disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+              >
+                <Trash2 className="size-3 transition-transform duration-300 group-hover:rotate-[-8deg]" />
+                Xóa hết
+              </button>
             </div>
-          </div>
 
-          {/* Region list */}
-          <div className="double-bezel">
-            <div className="double-bezel-inner p-5">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-xl bg-accent/8">
-                    <svg className="size-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-                      <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
+            <div className="mt-4 flex flex-col gap-2">
+              {regions.length === 0 ? (
+                <div className="rounded-xl border border-dashed border-black/[0.06] px-4 py-8 text-center">
+                  <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-black/[0.02]">
+                    <svg className="size-5 text-ink-light/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 8v8" /><path d="M8 12h8" />
                     </svg>
                   </div>
-                  <div>
-                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-light">Regions</p>
-                    <h3 className="text-sm font-semibold leading-tight">Danh sách vùng</h3>
-                  </div>
+                  <p className="text-xs text-ink-light">Kéo trên ảnh để tạo vùng</p>
                 </div>
-                <button
-                  type="button" onClick={clearAll} disabled={!regions.length}
-                  className="group flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-ink-light transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-danger/8 hover:text-danger disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
-                >
-                  <Trash2 className="size-3 transition-transform duration-300 group-hover:rotate-[-8deg]" />
-                  Xóa hết
-                </button>
-              </div>
-
-              <div className="mt-4 flex flex-col gap-2">
-                {regions.length === 0 ? (
-                  <div className="rounded-xl border border-dashed border-black/[0.06] px-4 py-8 text-center">
-                    <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-black/[0.02]">
-                      <svg className="size-5 text-ink-light/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
-                        <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 8v8" /><path d="M8 12h8" />
-                      </svg>
-                    </div>
-                    <p className="text-xs text-ink-light">Kéo trên ảnh để tạo vùng</p>
-                  </div>
-                ) : regions.map((r, i) => {
-                  const isActive = activeIndex === i;
-                  return (
-                    <div
-                      key={i} onClick={() => setActiveIndex(i)}
-                      className={`group/item relative flex items-center gap-3 rounded-xl px-3.5 py-3 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-                        isActive
-                          ? "bg-accent/8 shadow-[0_0_0_1px_rgba(53,99,233,0.15)]"
-                          : "bg-black/[0.015] hover:bg-black/[0.035] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.04)]"
-                      }`}
-                    >
-                      <span className={`flex size-7 shrink-0 items-center justify-center rounded-lg font-mono text-[10px] font-bold transition-all duration-300 ${
-                        isActive ? "bg-accent text-white" : "bg-black/[0.04] text-ink-light"
-                      }`}>
-                        {i + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-mono text-[11px] tabular-nums tracking-tight text-ink">
-                          x:{(r.x1 * 100).toFixed(1)}% — {(r.x2 * 100).toFixed(1)}%
-                        </div>
-                        <div className="font-mono text-[11px] tabular-nums tracking-tight text-ink-light">
-                          y:{(r.y1 * 100).toFixed(1)}% — {(r.y2 * 100).toFixed(1)}%
-                        </div>
+              ) : regions.map((r, i) => {
+                const isActive = activeIndex === i;
+                return (
+                  <div
+                    key={i} onClick={() => setActiveIndex(i)}
+                    className={`group/item relative flex items-center gap-3 rounded-xl px-3.5 py-3 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                      isActive
+                        ? "bg-accent/8 shadow-[0_0_0_1px_rgba(53,99,233,0.15)]"
+                        : "bg-black/[0.015] hover:bg-black/[0.035] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.04)]"
+                    }`}
+                  >
+                    <span className={`flex size-7 shrink-0 items-center justify-center rounded-lg font-mono text-[10px] font-bold transition-all duration-300 ${
+                      isActive ? "bg-accent text-white" : "bg-black/[0.04] text-ink-light"
+                    }`}>
+                      {i + 1}
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-mono text-[11px] tabular-nums tracking-tight text-ink">
+                        x:{(r.x1 * 100).toFixed(1)}% — {(r.x2 * 100).toFixed(1)}%
                       </div>
-                      <button
-                        type="button" aria-label={`Xóa vùng ${i + 1}`}
-                        onClick={(e) => { e.stopPropagation(); removeRegion(i); }}
-                        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-light opacity-0 group-hover/item:opacity-100 transition-all duration-300 hover:bg-danger/10 hover:text-danger cursor-pointer"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                      <div className="font-mono text-[11px] tabular-nums tracking-tight text-ink-light">
+                        y:{(r.y1 * 100).toFixed(1)}% — {(r.y2 * 100).toFixed(1)}%
+                      </div>
                     </div>
-                  );
-                })}
-              </div>
+                    <button
+                      type="button" aria-label={`Xóa vùng ${i + 1}`}
+                      onClick={(e) => { e.stopPropagation(); removeRegion(i); }}
+                      className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-light opacity-0 group-hover/item:opacity-100 transition-all duration-300 hover:bg-danger/10 hover:text-danger cursor-pointer"
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  </div>
+                );
+              })}
             </div>
           </div>
-
-          {/* Actions */}
-          <div className="flex flex-col gap-3">
-            <button
-              type="button" onClick={saveRegions} disabled={isSaving || !regions.length}
-              className="btn-island-primary w-full justify-center"
-            >
-              {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-              {isSaving ? "Đang lưu..." : "Lưu tọa độ"}
-            </button>
-
-            <button
-              type="button" onClick={clearAll}
-              className="group inline-flex items-center justify-center gap-2 text-sm text-ink-light hover:text-foreground transition-all duration-300 cursor-pointer"
-            >
-              <RotateCcw className="size-4 transition-transform duration-500 group-hover:rotate-[-180deg]" /> Đặt lại
-            </button>
-          </div>
-
-          {message && (
-            <div
-              role="status"
-              className={`rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
-                message.type === "success"
-                  ? "bg-success/8 text-success border border-success/10"
-                  : "bg-danger/8 text-danger border border-danger/10"
-              }`}
-            >
-              {message.text}
-            </div>
-          )}
-        </aside>
+        </div>
       </div>
+
+      {/* Actions */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <button
+          type="button" onClick={saveRegions} disabled={isSaving || !regions.length}
+          className="btn-island-primary justify-center flex-1"
+        >
+          {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+          {isSaving ? "Đang lưu..." : "Lưu tọa độ"}
+        </button>
+
+        <button
+          type="button" onClick={clearAll}
+          className="group inline-flex items-center justify-center gap-2 text-sm text-ink-light hover:text-foreground transition-all duration-300 cursor-pointer px-4"
+        >
+          <RotateCcw className="size-4 transition-transform duration-500 group-hover:rotate-[-180deg]" /> Đặt lại
+        </button>
+      </div>
+
+      {message && (
+        <div
+          role="status"
+          className={`rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+            message.type === "success"
+              ? "bg-success/8 text-success border border-success/10"
+              : "bg-danger/8 text-danger border border-danger/10"
+          }`}
+        >
+          {message.text}
+        </div>
+      )}
     </div>
   );
 }
