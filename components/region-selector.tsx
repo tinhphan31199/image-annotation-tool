@@ -438,83 +438,148 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       )}
 
       {/* Sidebar */}
-      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_280px]">
+      <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
         <div />
 
-        <aside className="flex flex-col gap-4">
-          <div className="glass-panel p-5">
-            <div className="flex items-center gap-2 text-sm font-semibold">
-              <Crosshair className="size-4 text-accent" /> Thông tin phiên
-            </div>
-            <div className="mt-4 grid gap-3 text-sm">
-              <div>
-                <p className="text-[11px] text-ink-light">Video ID</p>
-                <p className="mt-1 truncate font-mono text-xs">{videoId || "Chưa có"}</p>
-              </div>
-              <div>
-                <p className="text-[11px] text-ink-light">Nguồn</p>
-                <p className="mt-1 truncate font-mono text-[10px]">{imageUrl || "Chưa có"}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="glass-panel p-5">
-            <div className="flex items-center justify-between">
-              <h3 className="text-sm font-semibold">Danh sách vùng</h3>
-              <button
-                type="button" onClick={clearAll} disabled={!regions.length}
-                className="inline-flex items-center gap-1.5 text-[11px] text-ink-light transition hover:text-danger disabled:opacity-40 cursor-pointer"
-              >
-                <Trash2 className="size-3" /> Xóa hết
-              </button>
-            </div>
-            <div className="mt-3 flex flex-col gap-1.5">
-              {regions.length === 0 ? (
-                <p className="rounded-xl bg-black/[0.02] px-3 py-4 text-center text-xs text-ink-light">Chưa có vùng nào</p>
-              ) : regions.map((r, i) => (
-                <div
-                  key={i} onClick={() => setActiveIndex(i)}
-                  className={`flex items-center gap-2 rounded-lg px-3 py-2 font-mono text-[11px] cursor-pointer transition-all duration-200 ${
-                    activeIndex === i ? "bg-accent/8 ring-1 ring-accent/20" : "bg-black/[0.02] hover:bg-black/[0.04]"
-                  }`}
-                >
-                  <div className="flex min-w-0 flex-1 items-center justify-between gap-2">
-                    <span className={activeIndex === i ? "text-accent font-semibold" : ""}>#{i + 1}</span>
-                    <span className="truncate text-ink-light">
-                      x:{(r.x1 * 100).toFixed(1)}%–{(r.x2 * 100).toFixed(1)}%&nbsp;y:{(r.y1 * 100).toFixed(1)}%–{(r.y2 * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  <button
-                    type="button" aria-label={`Xóa vùng ${i + 1}`}
-                    onClick={(e) => { e.stopPropagation(); removeRegion(i); }}
-                    className="flex size-6 shrink-0 items-center justify-center rounded-md text-ink-light transition hover:bg-danger/10 hover:text-danger cursor-pointer"
-                  >
-                    <Trash2 className="size-3" />
-                  </button>
+        <aside className="flex flex-col gap-5">
+          {/* Session info */}
+          <div className="double-bezel">
+            <div className="double-bezel-inner p-5">
+              <div className="flex items-center gap-3">
+                <div className="flex size-8 items-center justify-center rounded-xl bg-accent/8">
+                  <Crosshair className="size-4 text-accent" />
                 </div>
-              ))}
+                <div>
+                  <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-light">Session</p>
+                  <h3 className="text-sm font-semibold leading-tight">Thông tin phiên</h3>
+                </div>
+              </div>
+
+              <div className="mt-5 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-[11px] text-ink-light">Video ID</span>
+                  <div className="flex items-center gap-2">
+                    <span className="h-1.5 w-1.5 rounded-full bg-success shrink-0" />
+                    <span className="truncate font-mono text-xs text-ink max-w-[160px]">{videoId || "—"}</span>
+                  </div>
+                </div>
+                <div className="h-px bg-black/[0.04]" />
+                <div className="flex items-start justify-between gap-3">
+                  <span className="text-[11px] text-ink-light shrink-0">Nguồn</span>
+                  <span className="truncate font-mono text-[10px] text-ink-light text-right max-w-[180px]">{imageUrl || "—"}</span>
+                </div>
+                <div className="h-px bg-black/[0.04]" />
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] text-ink-light">Số vùng</span>
+                  <span className="inline-flex items-center justify-center min-w-[28px] h-6 rounded-lg bg-accent/8 px-2 font-mono text-xs font-semibold text-accent">
+                    {regions.length}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          <button
-            type="button" onClick={saveRegions} disabled={isSaving || !regions.length}
-            className="btn-island-primary w-full justify-center"
-          >
-            {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
-            {isSaving ? "Đang lưu..." : "Lưu tọa độ"}
-          </button>
+          {/* Region list */}
+          <div className="double-bezel">
+            <div className="double-bezel-inner p-5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex size-8 items-center justify-center rounded-xl bg-accent/8">
+                    <svg className="size-4 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 9h18" /><path d="M9 21V9" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-mono text-[9px] uppercase tracking-[0.2em] text-ink-light">Regions</p>
+                    <h3 className="text-sm font-semibold leading-tight">Danh sách vùng</h3>
+                  </div>
+                </div>
+                <button
+                  type="button" onClick={clearAll} disabled={!regions.length}
+                  className="group flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] text-ink-light transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] hover:bg-danger/8 hover:text-danger disabled:opacity-30 disabled:pointer-events-none cursor-pointer"
+                >
+                  <Trash2 className="size-3 transition-transform duration-300 group-hover:rotate-[-8deg]" />
+                  Xóa hết
+                </button>
+              </div>
 
-          <button
-            type="button" onClick={clearAll}
-            className="inline-flex items-center justify-center gap-2 text-sm text-ink-light hover:text-foreground transition cursor-pointer"
-          >
-            <RotateCcw className="size-4" /> Đặt lại
-          </button>
+              <div className="mt-4 flex flex-col gap-2">
+                {regions.length === 0 ? (
+                  <div className="rounded-xl border border-dashed border-black/[0.06] px-4 py-8 text-center">
+                    <div className="mx-auto mb-3 flex size-10 items-center justify-center rounded-xl bg-black/[0.02]">
+                      <svg className="size-5 text-ink-light/50" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.2} strokeLinecap="round" strokeLinejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2" /><path d="M12 8v8" /><path d="M8 12h8" />
+                      </svg>
+                    </div>
+                    <p className="text-xs text-ink-light">Kéo trên ảnh để tạo vùng</p>
+                  </div>
+                ) : regions.map((r, i) => {
+                  const isActive = activeIndex === i;
+                  return (
+                    <div
+                      key={i} onClick={() => setActiveIndex(i)}
+                      className={`group/item relative flex items-center gap-3 rounded-xl px-3.5 py-3 cursor-pointer transition-all duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+                        isActive
+                          ? "bg-accent/8 shadow-[0_0_0_1px_rgba(53,99,233,0.15)]"
+                          : "bg-black/[0.015] hover:bg-black/[0.035] hover:shadow-[0_0_0_1px_rgba(0,0,0,0.04)]"
+                      }`}
+                    >
+                      <span className={`flex size-7 shrink-0 items-center justify-center rounded-lg font-mono text-[10px] font-bold transition-all duration-300 ${
+                        isActive ? "bg-accent text-white" : "bg-black/[0.04] text-ink-light"
+                      }`}>
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-mono text-[11px] tabular-nums tracking-tight text-ink">
+                          x:{(r.x1 * 100).toFixed(1)}% — {(r.x2 * 100).toFixed(1)}%
+                        </div>
+                        <div className="font-mono text-[11px] tabular-nums tracking-tight text-ink-light">
+                          y:{(r.y1 * 100).toFixed(1)}% — {(r.y2 * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                      <button
+                        type="button" aria-label={`Xóa vùng ${i + 1}`}
+                        onClick={(e) => { e.stopPropagation(); removeRegion(i); }}
+                        className="flex size-7 shrink-0 items-center justify-center rounded-lg text-ink-light opacity-0 group-hover/item:opacity-100 transition-all duration-300 hover:bg-danger/10 hover:text-danger cursor-pointer"
+                      >
+                        <Trash2 className="size-3.5" />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex flex-col gap-3">
+            <button
+              type="button" onClick={saveRegions} disabled={isSaving || !regions.length}
+              className="btn-island-primary w-full justify-center"
+            >
+              {isSaving ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />}
+              {isSaving ? "Đang lưu..." : "Lưu tọa độ"}
+            </button>
+
+            <button
+              type="button" onClick={clearAll}
+              className="group inline-flex items-center justify-center gap-2 text-sm text-ink-light hover:text-foreground transition-all duration-300 cursor-pointer"
+            >
+              <RotateCcw className="size-4 transition-transform duration-500 group-hover:rotate-[-180deg]" /> Đặt lại
+            </button>
+          </div>
 
           {message && (
-            <p role="status" className={`rounded-xl px-3 py-2 text-sm ${message.type === "success" ? "bg-success/8 text-success" : "bg-danger/8 text-danger"}`}>
+            <div
+              role="status"
+              className={`rounded-xl px-4 py-3 text-sm font-medium transition-all duration-300 ${
+                message.type === "success"
+                  ? "bg-success/8 text-success border border-success/10"
+                  : "bg-danger/8 text-danger border border-danger/10"
+              }`}
+            >
               {message.text}
-            </p>
+            </div>
           )}
         </aside>
       </div>
