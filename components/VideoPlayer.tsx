@@ -66,7 +66,7 @@ export default function VideoPlayer({
   const blobUrlRef = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    loadMediaBlobUrl(`${baseUrl}/api/video/${videoId}?duration=10`)
+    loadMediaBlobUrl(`/be/api/video/${videoId}?duration=10`)
       .then((url) => {
         if (cancelled) { URL.revokeObjectURL(url); return; }
         if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);

@@ -38,7 +38,7 @@ export default function SubtitlePreview({ videoId, baseUrl = "", region, onConfi
       setLoading(true);
       setError(false);
       try {
-        const res = await fetchWithSkip(`${baseUrl}/api/preview/subtitle/${videoId}`, {
+        const res = await fetchWithSkip(`/be/api/preview/subtitle/${videoId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

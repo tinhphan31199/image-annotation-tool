@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { loadMediaBlobUrl, fetchWithSkip } from "@/lib/api";
 import {
   Check,
@@ -73,12 +73,20 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
 
   useEffect(() => { regionsRef.current = regions; }, [regions]);
 
-  // Media blob — tránh trang warning của tunnel free (thẻ media không set header).
+  // Media blob qua proxy /be (same-origin) — hết CORS + warning tunnel.
+  const proxiedMediaUrl = useMemo(() => {
+    try {
+      const u = new URL(imageUrl);
+      return `/be${u.pathname}${u.search}`;
+    } catch {
+      return imageUrl;
+    }
+  }, [imageUrl]);
   const [mediaBlobSrc, setMediaBlobSrc] = useState<string | null>(null);
   const mediaBlobRef = useRef<string | null>(null);
   useEffect(() => {
     let cancelled = false;
-    loadMediaBlobUrl(imageUrl)
+    loadMediaBlobUrl(proxiedMediaUrl)
       .then((url) => {
         if (cancelled) { URL.revokeObjectURL(url); return; }
         if (mediaBlobRef.current) URL.revokeObjectURL(mediaBlobRef.current);
@@ -87,7 +95,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
       })
       .catch(() => {});
     return () => { cancelled = true; };
-  }, [imageUrl]);
+  }, [proxiedMediaUrl]);
   useEffect(() => {
     return () => { if (mediaBlobRef.current) URL.revokeObjectURL(mediaBlobRef.current); };
   }, []);
@@ -309,7 +317,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
   const saveRegions = async () => {
     if (!videoId) { setMessage({ type: "error", text: "Thiếu videoid trên URL." }); return; }
     let endpoint: string;
-    try { endpoint = `${new URL(imageUrl).origin}/api/delogo/${encodeURIComponent(videoId)}`; }
+    try { endpoint = `/be/api/delogo/${encodeURIComponent(videoId)}`; }
     catch { setMessage({ type: "error", text: "URL ảnh hoặc video không hợp lệ." }); return; }
     setIsSaving(true); setMessage(null);
     try {

@@ -115,7 +115,7 @@ export function AnnotatorPage() {
             baseUrl={baseUrl}
             onConfirmed={(region, startTime) => {
               setOcrRegion(region);
-              fetchWithSkip(`${baseUrl}/api/region/${videoId}`, {
+              fetchWithSkip(`/be/api/region/${videoId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ region, start_time: startTime }),
@@ -130,7 +130,7 @@ export function AnnotatorPage() {
             baseUrl={baseUrl}
             region={ocrRegion || { x1: 0, y1: 0, x2: 1, y2: 1 }}
             onConfirmed={(style) => {
-              fetchWithSkip(`${baseUrl}/api/style/${videoId}`, {
+              fetchWithSkip(`/be/api/style/${videoId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(style),

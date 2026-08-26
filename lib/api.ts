@@ -49,8 +49,10 @@ export interface JobStatus {
   error?: string | null;
 }
 
-function jbase(baseUrl?: string) {
-  return (baseUrl || '').replace(/\/$/, '');
+// Mọi request đi qua same-origin proxy /be/* (next.config rewrites) tới
+// BACKEND_ORIGIN → không CORS, không preflight, không warning tunnel.
+function jbase(_baseUrl?: string) {
+  return '/be';
 }
 
 // Pinggy free hiện trang warning cho request browser-UA thiếu header này;
