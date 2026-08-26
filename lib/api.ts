@@ -100,15 +100,14 @@ export async function reTranslateLine(
   return data.text as string;
 }
 
-export async function startSrtRiskCheck(videoId: string, lang = 'vi', baseUrl?: string): Promise<string> {
+export async function startSrtRiskCheck(videoId: string, lang = 'vi', baseUrl?: string): Promise<{ job_id: string }> {
   const res = await fetch(`${jbase(baseUrl)}/api/srt/${videoId}/risk-check`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ lang }),
   });
   if (!res.ok) throw new Error(`Risk-check HTTP ${res.status}`);
-  const data = await res.json();
-  return data.job_id as string;
+  return res.json();
 }
 
 export async function getJobStatus(jobId: string, baseUrl?: string): Promise<JobStatus> {
