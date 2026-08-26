@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { loadMediaBlobUrl } from "@/lib/api";
 
 function clamp(v: number, min = 0, max = 1) {
   return Math.max(min, Math.min(max, v));
@@ -58,6 +59,28 @@ export default function VideoPlayer({
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [seeking, setSeeking] = useState(false);
+
+  // Tải video qua fetch (kèm header skip tunnel-free) rồi tạo blob URL —
+  // thẻ <video> không gửi được header nên src trực tiếp sẽ dính trang warning.
+  const [blobSrc, setBlobSrc] = useState<string | null>(null);
+  const blobUrlRef = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadMediaBlobUrl(`${baseUrl}/api/video/${videoId}?duration=10`)
+      .then((url) => {
+        if (cancelled) { URL.revokeObjectURL(url); return; }
+        if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current);
+        blobUrlRef.current = url;
+        setBlobSrc(url);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [baseUrl, videoId]);
+  useEffect(() => {
+    return () => { if (blobUrlRef.current) URL.revokeObjectURL(blobUrlRef.current); };
+  }, []);
 
   const container = containerRef ?? containerEl;
   const video = videoRef ?? videoEl;
@@ -137,7 +160,7 @@ export default function VideoPlayer({
           >
             <video
               ref={video}
-              src={`${baseUrl}/api/video/${videoId}?duration=10`}
+              src={blobSrc}
               className="absolute inset-0 w-full h-full object-contain"
               controls={false}
               playsInline

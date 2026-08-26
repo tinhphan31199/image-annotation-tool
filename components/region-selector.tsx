@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { loadMediaBlobUrl } from "@/lib/api";
 import {
   Check,
   Crosshair,
@@ -71,6 +72,25 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
   const [duration, setDuration] = useState(0);
 
   useEffect(() => { regionsRef.current = regions; }, [regions]);
+
+  // Media blob — tránh trang warning của tunnel free (thẻ media không set header).
+  const [mediaBlobSrc, setMediaBlobSrc] = useState<string | null>(null);
+  const mediaBlobRef = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    loadMediaBlobUrl(imageUrl)
+      .then((url) => {
+        if (cancelled) { URL.revokeObjectURL(url); return; }
+        if (mediaBlobRef.current) URL.revokeObjectURL(mediaBlobRef.current);
+        mediaBlobRef.current = url;
+        setMediaBlobSrc(url);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [imageUrl]);
+  useEffect(() => {
+    return () => { if (mediaBlobRef.current) URL.revokeObjectURL(mediaBlobRef.current); };
+  }, []);
 
   const redraw = useCallback(() => {
     const c = canvasRef.current;
@@ -342,7 +362,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
             {isVideo ? (
               <video
                 ref={videoRef}
-                src={imageUrl}
+                src={mediaBlobSrc ?? undefined}
                 className="absolute inset-0 w-full h-full object-contain"
                 preload="metadata"
                 playsInline
@@ -362,7 +382,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
               />
             ) : (
               <img
-                src={imageUrl}
+                src={mediaBlobSrc ?? undefined}
                 alt="Ảnh cần xoá watermark"
                 className="absolute inset-0 w-full h-full object-contain"
                 onLoad={(e) => {

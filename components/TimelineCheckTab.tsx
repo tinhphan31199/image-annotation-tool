@@ -13,6 +13,7 @@ import {
   type SrtEntry,
   type TimelineIssue,
   type SubtitleRisk,
+  loadMediaBlobUrl,
 } from "@/lib/api";
 import { getVideoUrl } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
@@ -50,6 +51,26 @@ export default function TimelineCheckTab({ videoId, baseUrl = "" }: Props) {
   const [checkError, setCheckError] = useState("");
   const [toast, setToast] = useState("");
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  // Video blob — thẻ <video> không set được header skip tunnel-free.
+  const [videoBlobSrc, setVideoBlobSrc] = useState<string | null>(null);
+  const videoBlobRef = useRef<string | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    if (!videoId) return;
+    loadMediaBlobUrl(getVideoUrl(videoId, baseUrl))
+      .then((url) => {
+        if (cancelled) { URL.revokeObjectURL(url); return; }
+        if (videoBlobRef.current) URL.revokeObjectURL(videoBlobRef.current);
+        videoBlobRef.current = url;
+        setVideoBlobSrc(url);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [videoId, baseUrl]);
+  useEffect(() => {
+    return () => { if (videoBlobRef.current) URL.revokeObjectURL(videoBlobRef.current); };
+  }, []);
 
   const load = useCallback(async () => {
     setLoadError("");
@@ -193,7 +214,7 @@ export default function TimelineCheckTab({ videoId, baseUrl = "" }: Props) {
           <div className="double-bezel-inner overflow-hidden">
             <video
               ref={videoRef}
-              src={getVideoUrl(videoId, baseUrl)}
+              src={videoBlobSrc ?? undefined}
               className="w-full max-h-[32dvh] bg-black object-contain"
               controls
               playsInline

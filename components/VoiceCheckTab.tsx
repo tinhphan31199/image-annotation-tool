@@ -10,6 +10,7 @@ import {
   setTtsSpeed,
   checkTtsAlignment,
   getTtsAudioUrl,
+  fetchWithSkip,
   resolveVoiceReview,
   type SrtEntry,
   type VoiceMapDetail,
@@ -83,7 +84,7 @@ export default function VoiceCheckTab({ videoId, baseUrl = "" }: Props) {
     return [...s];
   }, [voiceMap]);
 
-  const togglePlay = (index: number) => {
+  const togglePlay = async (index: number) => {
     if (!audioRef.current) audioRef.current = new Audio();
     const audio = audioRef.current;
     if (playingIndex === index) {
@@ -92,10 +93,22 @@ export default function VoiceCheckTab({ videoId, baseUrl = "" }: Props) {
       return;
     }
     audio.pause();
-    audio.src = getTtsAudioUrl(videoId, index, baseUrl);
-    audio.onended = () => setPlayingIndex(null);
-    audio.onerror = () => setPlayingIndex(null);
-    audio.play().then(() => setPlayingIndex(index)).catch(() => setPlayingIndex(null));
+    setPlayingIndex(index);
+    try {
+      // Audio element không set được header skip — tải qua fetch rồi mới play.
+      const res = await fetchWithSkip(getTtsAudioUrl(videoId, index, baseUrl));
+      if (!res.ok) throw new Error("audio failed");
+      const blobUrl = URL.createObjectURL(await res.blob());
+      const prevBlob = audio.src.startsWith("blob:");
+      audio.src = blobUrl;
+      audio.onended = () => { setPlayingIndex(null); URL.revokeObjectURL(blobUrl); };
+      audio.onerror = () => { setPlayingIndex(null); URL.revokeObjectURL(blobUrl); };
+      await audio.play();
+      if (prevBlob && audio.dataset.prev) URL.revokeObjectURL(audio.dataset.prev);
+      audio.dataset.prev = blobUrl;
+    } catch {
+      setPlayingIndex(null);
+    }
   };
 
   const handleRegen = async (index: number) => {

@@ -53,8 +53,46 @@ function jbase(baseUrl?: string) {
   return (baseUrl || '').replace(/\/$/, '');
 }
 
+// Pinggy free hiện trang warning cho request browser-UA thiếu header này;
+// ngrok free tương tự với 'ngrok-skip-browser-warning'. Gửi cả hai.
+const SKIP_HEADERS: Record<string, string> = {
+  'X-Pinggy-No-Screen': '1',
+  'ngrok-skip-browser-warning': '1',
+};
+
+export async function fetchWithSkip(url: string, init?: RequestInit): Promise<Response> {
+  return fetch(url, {
+    ...init,
+    headers: { ...SKIP_HEADERS, ...(init?.headers as Record<string, string> | undefined) },
+  });
+}
+
+// Thẻ <video>/<audio>/<img> không gửi được custom header nên phải tải qua
+// fetch rồi tạo blob URL — tránh trang warning của tunnel free.
+export async function loadMediaBlobUrl(
+  url: string,
+  onProgress?: (loaded: number, total: number) => void,
+): Promise<string> {
+  const res = await fetchWithSkip(url);
+  if (!res.ok) throw new Error(`Media HTTP ${res.status}`);
+  if (!res.body) return URL.createObjectURL(await res.blob());
+  const total = Number(res.headers.get('content-length')) || 0;
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let received = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    chunks.push(value);
+    received += value.length;
+    onProgress?.(received, total);
+  }
+  const type = res.headers.get('content-type') || 'application/octet-stream';
+  return URL.createObjectURL(new Blob(chunks as BlobPart[], { type }));
+}
+
 export async function getSrtEntries(videoId: string, baseUrl?: string): Promise<SrtEntry[]> {
-  const res = await fetch(`${jbase(baseUrl)}/api/srt/${videoId}/entries`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/srt/${videoId}/entries`);
   if (!res.ok) throw new Error(`SRT HTTP ${res.status}`);
   const data = await res.json();
   return data.entries ?? [];
@@ -75,7 +113,7 @@ export function entriesToSrt(entries: SrtEntry[]): string {
 }
 
 export async function updateSrt(videoId: string, entries: SrtEntry[], baseUrl?: string): Promise<void> {
-  const res = await fetch(`${jbase(baseUrl)}/api/srt/${videoId}`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/srt/${videoId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content: entriesToSrt(entries) }),
@@ -90,7 +128,7 @@ export async function reTranslateLine(
   targetLang = 'vi',
   baseUrl?: string,
 ): Promise<string> {
-  const res = await fetch(`${jbase(baseUrl)}/api/srt/${videoId}/re-translate-line`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/srt/${videoId}/re-translate-line`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ index, source_lang: sourceLang, target_lang: targetLang }),
@@ -101,7 +139,7 @@ export async function reTranslateLine(
 }
 
 export async function startSrtRiskCheck(videoId: string, lang = 'vi', baseUrl?: string): Promise<{ job_id: string }> {
-  const res = await fetch(`${jbase(baseUrl)}/api/srt/${videoId}/risk-check`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/srt/${videoId}/risk-check`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ lang }),
@@ -111,13 +149,13 @@ export async function startSrtRiskCheck(videoId: string, lang = 'vi', baseUrl?: 
 }
 
 export async function getJobStatus(jobId: string, baseUrl?: string): Promise<JobStatus> {
-  const res = await fetch(`${jbase(baseUrl)}/api/status/${jobId}`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/status/${jobId}`);
   if (!res.ok) throw new Error(`Status HTTP ${res.status}`);
   return res.json();
 }
 
 export async function getSrtRiskResult(videoId: string, baseUrl?: string): Promise<SubtitleRisk[]> {
-  const res = await fetch(`${jbase(baseUrl)}/api/srt/${videoId}/risk-check`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/srt/${videoId}/risk-check`);
   if (!res.ok) throw new Error(`Risk result HTTP ${res.status}`);
   const data = await res.json();
   return data.risks ?? [];
@@ -131,7 +169,7 @@ interface PipelineStateResp {
 }
 
 export async function getPipelineState(videoId: string, baseUrl?: string): Promise<PipelineStateResp> {
-  const res = await fetch(`${jbase(baseUrl)}/api/pipeline/${videoId}`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/pipeline/${videoId}`);
   if (!res.ok) return {};
   return res.json();
 }
@@ -141,7 +179,7 @@ export async function resolveTimelineReview(
   action: 'continue' | 'fix',
   baseUrl?: string,
 ): Promise<void> {
-  await fetch(`${jbase(baseUrl)}/api/pipeline/${videoId}/timeline`, {
+  await fetchWithSkip(`${jbase(baseUrl)}/api/pipeline/${videoId}/timeline`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action }),
@@ -152,7 +190,7 @@ export async function resolveVoiceReview(
   videoId: string,
   baseUrl?: string,
 ): Promise<void> {
-  await fetch(`${jbase(baseUrl)}/api/pipeline/${videoId}/voice`, {
+  await fetchWithSkip(`${jbase(baseUrl)}/api/pipeline/${videoId}/voice`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'continue' }),
@@ -170,7 +208,7 @@ export interface CapCutVoice {
 }
 
 export async function getCapCutVoices(lang = 'vi-VN', baseUrl?: string): Promise<CapCutVoice[]> {
-  const res = await fetch(`${jbase(baseUrl)}/api/capcut/voices?lang=${encodeURIComponent(lang)}`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/capcut/voices?lang=${encodeURIComponent(lang)}`);
   if (!res.ok) throw new Error(`Voices HTTP ${res.status}`);
   return res.json();
 }
@@ -185,7 +223,7 @@ export interface VoiceMapDetail {
 }
 
 export async function getVoiceMapDetail(videoId: string, lang = 'vi', baseUrl?: string): Promise<VoiceMapDetail> {
-  const res = await fetch(`${jbase(baseUrl)}/api/voice-map/${videoId}?lang=${lang}`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/voice-map/${videoId}?lang=${lang}`);
   if (!res.ok) throw new Error(`Voice-map HTTP ${res.status}`);
   return res.json();
 }
@@ -196,7 +234,7 @@ export async function updateVoiceMapLine(
   voiceType: string,
   baseUrl?: string,
 ): Promise<void> {
-  const res = await fetch(`${jbase(baseUrl)}/api/voice-map/${videoId}/line`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/voice-map/${videoId}/line`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ index, voice_type: voiceType }),
@@ -210,7 +248,7 @@ export async function bulkSwitchVoice(
   toVoice: string,
   baseUrl?: string,
 ): Promise<{ job_id: string }> {
-  const res = await fetch(`${jbase(baseUrl)}/api/voice-map/${videoId}/bulk-switch`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/voice-map/${videoId}/bulk-switch`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ from_voice: fromVoice, to_voice: toVoice }),
@@ -225,7 +263,7 @@ export async function regenerateTtsLine(
   voiceType: string,
   baseUrl?: string,
 ): Promise<void> {
-  const res = await fetch(`${jbase(baseUrl)}/api/tts/${videoId}/regenerate-line`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/tts/${videoId}/regenerate-line`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ index, voice_type: voiceType }),
@@ -239,7 +277,7 @@ export async function setTtsSpeed(
   speed: number,
   baseUrl?: string,
 ): Promise<{ new_duration: number }> {
-  const res = await fetch(`${jbase(baseUrl)}/api/tts/${videoId}/set-speed`, {
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/tts/${videoId}/set-speed`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ index, speed }),
@@ -265,7 +303,7 @@ export async function checkTtsAlignment(
   lang = 'vi',
   baseUrl?: string,
 ): Promise<AlignmentIssue[]> {
-  const res = await fetch(`${jbase(baseUrl)}/api/tts/${videoId}/check-alignment?lang=${lang}`);
+  const res = await fetchWithSkip(`${jbase(baseUrl)}/api/tts/${videoId}/check-alignment?lang=${lang}`);
   if (!res.ok) throw new Error(`Alignment HTTP ${res.status}`);
   const data = await res.json();
   return data.issues ?? [];

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { getCapCutVoices, type CapCutVoice } from "@/lib/api";
+import { getCapCutVoices, fetchWithSkip, type CapCutVoice } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 
 interface Props {
@@ -54,7 +54,7 @@ export default function VoiceSheet({ baseUrl, title, open, onClose, onPick }: Pr
     audio.pause();
     setPreviewing(voice.voice_type);
     try {
-      const res = await fetch(`${(baseUrl || "").replace(/\/$/, "")}/api/capcut/preview`, {
+      const res = await fetchWithSkip(`${(baseUrl || "").replace(/\/$/, "")}/api/capcut/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ voice: voice.voice_type }),
