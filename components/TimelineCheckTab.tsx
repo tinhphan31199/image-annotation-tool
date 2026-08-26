@@ -121,7 +121,7 @@ export default function TimelineCheckTab({ videoId, baseUrl = "" }: Props) {
     setChecking(true);
     setCheckError("");
     try {
-      const { job_id } = { job_id: await startSrtRiskCheck(videoId, "vi", baseUrl) };
+      const { job_id } = await startSrtRiskCheck(videoId, "vi", baseUrl);
       for (let i = 0; i < 600; i++) {
         await new Promise((r) => setTimeout(r, 1000));
         const st = await getJobStatus(job_id, baseUrl);
