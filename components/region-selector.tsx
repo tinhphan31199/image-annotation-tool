@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { loadMediaBlobUrl } from "@/lib/api";
+import { loadMediaBlobUrl, fetchWithSkip } from "@/lib/api";
 import {
   Check,
   Crosshair,
@@ -313,7 +313,7 @@ export function RegionSelector({ imageUrl, videoId }: Props) {
     catch { setMessage({ type: "error", text: "URL ảnh hoặc video không hợp lệ." }); return; }
     setIsSaving(true); setMessage(null);
     try {
-      const response = await fetch(endpoint, {
+      const response = await fetchWithSkip(endpoint, {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ videoid: videoId, regions }),
       });

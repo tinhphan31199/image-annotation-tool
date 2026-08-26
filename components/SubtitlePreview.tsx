@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { fetchWithSkip } from "@/lib/api";
 import type { Region, SubtitleStyle } from "@/lib/api";
 import { useI18n } from "@/lib/i18n";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -37,7 +38,7 @@ export default function SubtitlePreview({ videoId, baseUrl = "", region, onConfi
       setLoading(true);
       setError(false);
       try {
-        const res = await fetch(`${baseUrl}/api/preview/subtitle/${videoId}`, {
+        const res = await fetchWithSkip(`${baseUrl}/api/preview/subtitle/${videoId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

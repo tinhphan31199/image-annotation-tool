@@ -7,7 +7,7 @@ import OcrRegionSelector from "@/components/OcrRegionSelector";
 import SubtitlePreview from "@/components/SubtitlePreview";
 import TimelineCheckTab from "@/components/TimelineCheckTab";
 import VoiceCheckTab from "@/components/VoiceCheckTab";
-import type { Region } from "@/lib/api";
+import { fetchWithSkip, type Region } from "@/lib/api";
 
 type Tab = "watermark" | "ocr" | "subtitle" | "timeline" | "voice";
 
@@ -115,7 +115,7 @@ export function AnnotatorPage() {
             baseUrl={baseUrl}
             onConfirmed={(region, startTime) => {
               setOcrRegion(region);
-              fetch(`${baseUrl}/api/region/${videoId}`, {
+              fetchWithSkip(`${baseUrl}/api/region/${videoId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ region, start_time: startTime }),
@@ -130,7 +130,7 @@ export function AnnotatorPage() {
             baseUrl={baseUrl}
             region={ocrRegion || { x1: 0, y1: 0, x2: 1, y2: 1 }}
             onConfirmed={(style) => {
-              fetch(`${baseUrl}/api/style/${videoId}`, {
+              fetchWithSkip(`${baseUrl}/api/style/${videoId}`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(style),
