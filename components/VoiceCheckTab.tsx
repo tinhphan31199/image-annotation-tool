@@ -364,16 +364,16 @@ export default function VoiceCheckTab({ videoId, baseUrl = "" }: Props) {
         </div>
       )}
 
-      {/* Sticky action bar — confirm voice check */}
-      <div className="fixed inset-x-0 bottom-0 z-30 px-4 pb-5 pt-8 bg-gradient-to-t from-background via-background/95 to-transparent pointer-events-none">
-        <div className="mx-auto max-w-3xl flex items-center gap-2 pointer-events-auto">
+      {/* Action bar — đồng bộ với tab OCR (inline glass-panel) */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-5">
+        <div className="flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={handleContinue}
             disabled={resolving || entries.length === 0}
-            className="btn-island-primary flex-1 justify-center group"
+            className="btn-island-primary group text-sm disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            {resolving ? t("voice.saving") : t("voice.continue")}
+            <span className="tracking-tight">{t("voice.continue")}</span>
             <span className="btn-island-icon">
               <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9 18 15 12 9 6" />
