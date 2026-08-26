@@ -188,28 +188,23 @@ export default function VoiceCheckTab({ videoId, baseUrl = "" }: Props) {
 
   return (
     <div className="space-y-5">
-      {/* Header */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-accent/10">
-            <svg className="w-4.5 h-4.5 text-accent" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round">
-              <path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M15.5 8.5a5 5 0 010 7" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold">{t("voice.title")}</h3>
-            <p className="text-[11px] text-ink-muted">{t("voice.lines", { count: entries.length })}</p>
-          </div>
+      {/* Instructions bar */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-4">
+        <p className="text-sm text-ink-muted leading-relaxed">
+          {t("voice.instructions")}{" "}
+          <span className="text-ink font-medium">{t("voice.lines", { count: entries.length })}</span>
+        </p>
+        <div className="flex gap-2 flex-shrink-0 items-center">
+          <button
+            type="button"
+            onClick={runAlignment}
+            disabled={checkingAlignment || entries.length === 0}
+            className="shrink-0 rounded-full bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+          >
+            {checkingAlignment && <IconSpinner className="w-3 h-3" />}
+            {checkingAlignment ? t("voice.checkingAlignment") : t("voice.checkAlignment")}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={runAlignment}
-          disabled={checkingAlignment || entries.length === 0}
-          className="shrink-0 rounded-full bg-accent px-3.5 py-2 text-[11px] font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
-        >
-          {checkingAlignment && <IconSpinner className="w-3 h-3" />}
-          {checkingAlignment ? t("voice.checkingAlignment") : t("voice.checkAlignment")}
-        </button>
       </div>
 
       {/* Errors */}

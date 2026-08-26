@@ -34,6 +34,7 @@ const strings: Record<string, string> = {
 
   // Timeline check tab
   "timeline.title": "Kiểm tra phụ đề",
+  "timeline.instructions": "Rà soát thời gian xuất hiện từng dòng phụ đề. Chỉnh nội dung, dịch lại hoặc xóa dòng, rồi bấm Tiếp tục.",
   "timeline.issuesFound": "{count} lỗi timeline",
   "timeline.noIssues": "Không có lỗi timeline nào được báo",
   "timeline.checkRisk": "Kiểm tra rủi ro",
@@ -55,6 +56,7 @@ const strings: Record<string, string> = {
 
   // Voice check tab
   "voice.title": "Kiểm tra giọng đọc",
+  "voice.instructions": "Nghe và chỉnh giọng đọc cho từng dòng phụ đề. Đổi giọng, tạo lại audio hoặc chỉnh tốc độ, rồi bấm Tiếp tục.",
   "voice.lines": "{count} dòng",
   "voice.checkAlignment": "Kiểm tra độ khớp",
   "voice.checkingAlignment": "Đang kiểm tra…",

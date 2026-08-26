@@ -170,31 +170,25 @@ export default function TimelineCheckTab({ videoId, baseUrl = "" }: Props) {
 
   return (
     <div className="space-y-5 pb-24">
-      {/* Header */}
-      <div className="glass-panel rounded-2xl p-4 sm:p-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-warn/15">
-            <svg className="w-4.5 h-4.5 text-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round">
-              <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
-            </svg>
-          </div>
-          <div className="min-w-0">
-            <h3 className="text-sm font-semibold">{t("timeline.title")}</h3>
-            <p className="text-[11px] text-ink-muted truncate">
-              {issues.length > 0 ? t("timeline.issuesFound", { count: issues.length }) : t("timeline.noIssues")}
-            </p>
-          </div>
+      {/* Instructions bar */}
+      <div className="glass-panel rounded-2xl p-4 sm:p-5 flex items-start justify-between gap-4">
+        <p className="text-sm text-ink-muted leading-relaxed">
+          {t("timeline.instructions")}{" "}
+          <span className="text-warn font-medium">
+            {issues.length > 0 ? t("timeline.issuesFound", { count: issues.length }) : t("timeline.noIssues")}
+          </span>
+        </p>
+        <div className="flex gap-2 flex-shrink-0 items-center">
+          <button
+            type="button"
+            onClick={runRiskCheck}
+            disabled={checking || entries.length === 0}
+            className="shrink-0 rounded-full bg-warn px-3.5 py-2 text-[11px] font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
+          >
+            {checking ? <IconSpinner className="w-3.5 h-3.5" /> : null}
+            {checking ? t("timeline.checking") : t("timeline.checkRisk")}
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={runRiskCheck}
-          disabled={checking || entries.length === 0}
-          className="shrink-0 rounded-full bg-warn px-3.5 py-2 text-[11px] font-medium text-white transition-all duration-300 active:scale-95 disabled:opacity-50 cursor-pointer inline-flex items-center gap-1.5"
-        >
-          {checking ? <IconSpinner className="w-3.5 h-3.5" /> : null}
-          {checking ? t("timeline.checking") : t("timeline.checkRisk")}
-        </button>
       </div>
 
       {/* Video */}
