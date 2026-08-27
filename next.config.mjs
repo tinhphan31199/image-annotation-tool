@@ -13,20 +13,6 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
-  async redirects() {
-    return [
-      {
-        source: "/terms",
-        destination: "/tiktok71SwacWuMh0otSZ44qjOEqwhAYkXpf6m.txt",
-        permanent: false,
-      },
-      {
-        source: "/terms/",
-        destination: "/tiktok71SwacWuMh0otSZ44qjOEqwhAYkXpf6m.txt",
-        permanent: false,
-      },
-    ];
-  },
   async rewrites() {
     return [
       {
