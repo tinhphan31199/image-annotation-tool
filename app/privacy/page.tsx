@@ -8,13 +8,13 @@ export default function PrivacyPage() {
     <main className="mx-auto max-w-3xl px-5 py-12 sm:py-16">
       <div className="glass-panel px-6 py-10 sm:px-10 sm:py-12">
         <header className="mb-10 border-b border-border pb-6">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          <h1 className="text-2xl font-semibold tracking-tight text-black sm:text-3xl">
             Privacy Policy
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">Last updated: August 27, 2026</p>
         </header>
 
-        <div className="space-y-9 text-[0.95rem] leading-relaxed text-foreground/90">
+        <div className="space-y-9 text-[0.95rem] leading-relaxed text-black">
           <Section number={1} title="Overview">
             <p>
               This Privacy Policy explains how this application (&ldquo;the App&rdquo;) handles
@@ -184,7 +184,7 @@ export default function PrivacyPage() {
           <Section number={12} title="Contact">
             <p>If you have questions about this Privacy Policy, please contact:</p>
             <p>
-              <span className="font-medium text-foreground">Email:</span>{' '}
+              <span className="font-medium text-black">Email:</span>{' '}
               <a
                 href="mailto:your-email@example.com"
                 className="text-primary underline-offset-4 hover:underline"
@@ -210,7 +210,7 @@ function Section({
 }) {
   return (
     <section>
-      <h2 className="mb-3 text-lg font-semibold tracking-tight text-foreground">
+      <h2 className="mb-3 text-lg font-semibold tracking-tight text-black">
         <span className="mr-2 text-primary">{number}.</span>
         {title}
       </h2>
