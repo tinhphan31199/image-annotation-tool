@@ -5,7 +5,7 @@ export const dynamic = "force-static";
 
 export async function GET() {
   const content = await readFile(
-    join(process.cwd(), "public", "tiktok4t6VpK6Fm1txsGXn9aZsTKVElwR3JPFl.txt"),
+    join(process.cwd(), "public", "tiktok71SwacWuMh0otSZ44qjOEqwhAYkXpf6m.txt"),
     "utf8",
   );
 
