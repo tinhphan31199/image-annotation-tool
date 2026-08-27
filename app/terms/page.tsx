@@ -119,10 +119,10 @@ export default function TermsPage() {
             <p>
               <span className="font-medium text-black">Email:</span>{' '}
               <a
-                href="mailto:your-email@example.com"
+                href="mailto:tinhphan31199@gmail.com"
                 className="text-primary underline-offset-4 hover:underline"
               >
-                your-email@example.com
+                tinhphan31199@gmail.com
               </a>
             </p>
           </Section>
